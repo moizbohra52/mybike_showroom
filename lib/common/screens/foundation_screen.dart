@@ -1,19 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mybike_showroom/common/layouts/breakpoint.dart';
+import 'package:mybike_showroom/common/widgets/widgets.dart';
 import 'package:mybike_showroom/core/config/env_config.dart';
 import 'package:mybike_showroom/core/config/platform_target.dart';
 import 'package:mybike_showroom/core/constants/app_strings.dart';
+import 'package:mybike_showroom/core/routes/app_routes.dart';
 import 'package:mybike_showroom/core/routes/navigation_registry.dart';
 import 'package:mybike_showroom/core/theme/app_dimensions.dart';
 import 'package:mybike_showroom/core/theme/app_palette.dart';
 import 'package:mybike_showroom/core/theme/app_typography.dart';
 
-/// Phase 1 home screen.
+/// Phase 1 & 2 home screen.
 ///
 /// Renders the MyBike visual identity, reports the live platform /
-/// breakpoint / environment status and lists navigation entries as tappable
-/// cards. From Phase 15 this becomes the real dashboard.
+/// breakpoint / environment status, showcases the Phase 2 design system,
+/// and lists navigation entries as tappable cards.
 class FoundationScreen extends StatelessWidget {
   const FoundationScreen({super.key});
 
@@ -31,6 +33,8 @@ class FoundationScreen extends StatelessWidget {
               const HeaderSection(),
               const SizedBox(height: AppDimensions.space32),
               StatusSection(breakpoint: breakpoint),
+              const SizedBox(height: AppDimensions.space40),
+              const DesignSystemSection(),
               const SizedBox(height: AppDimensions.space40),
               const ModuleGridSection(),
               const SizedBox(height: AppDimensions.space40),
@@ -85,6 +89,12 @@ class HeaderSection extends StatelessWidget {
             color: palette.textMuted,
           ),
         ),
+        const SizedBox(height: AppDimensions.space16),
+        AppOutlinedButton(
+          text: 'Open Phase 2 Component Gallery',
+          icon: Icons.palette_outlined,
+          onPressed: () => context.go(AppRoutes.galleryPath),
+        ),
       ],
     );
   }
@@ -101,35 +111,35 @@ class StatusSection extends StatelessWidget {
     final AppPalette palette = AppPalette.of(context);
     final Size size = MediaQuery.sizeOf(context);
 
-    final List<_StatusItem> items = <_StatusItem>[
-      _StatusItem(
+    final List<FoundationStatusItem> items = <FoundationStatusItem>[
+      FoundationStatusItem(
         AppStrings.platformLabel,
         PlatformTarget.label,
         Icons.devices_outlined,
       ),
-      _StatusItem(
+      FoundationStatusItem(
         AppStrings.breakpointLabel,
         breakpoint.label,
         Icons.monitor_outlined,
       ),
-      _StatusItem(
+      FoundationStatusItem(
         AppStrings.windowSizeLabel,
         '${size.width.toInt()} × ${size.height.toInt()} px',
         Icons.square_foot_outlined,
       ),
-      _StatusItem(
+      FoundationStatusItem(
         AppStrings.environmentLabel,
         EnvConfig.current.describe,
         Icons.public,
       ),
-      _StatusItem(
+      FoundationStatusItem(
         AppStrings.supabaseLabel,
         EnvConfig.current.isSupabaseConfigured
             ? AppStrings.configuredLabel
             : AppStrings.notConfiguredLabel,
         Icons.cloud_outlined,
       ),
-      _StatusItem(
+      FoundationStatusItem(
         AppStrings.pushSupportLabel,
         PlatformTarget.supportsPushNotifications
             ? AppStrings.supportedLabel
@@ -142,8 +152,167 @@ class StatusSection extends StatelessWidget {
       spacing: AppDimensions.space16,
       runSpacing: AppDimensions.space12,
       children: <Widget>[
-        for (final _StatusItem item in items)
-          _StatusCard(item: item, palette: palette),
+        for (final FoundationStatusItem item in items)
+          FoundationStatusCard(item: item, palette: palette),
+      ],
+    );
+  }
+}
+
+/// Showcase of Phase 2 MyBike design system components.
+class DesignSystemSection extends StatelessWidget {
+  const DesignSystemSection({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: <Widget>[
+        const AppSectionHeader(
+          title: 'Design System Showcase (Phase 2)',
+          subtitle: 'Reusable UI components adhering to MyBike brand guidelines and tokens',
+        ),
+        const SizedBox(height: AppDimensions.space16),
+
+        // Stat Cards row
+        Wrap(
+          spacing: AppDimensions.space16,
+          runSpacing: AppDimensions.space16,
+          children: <Widget>[
+            SizedBox(
+              width: 280,
+              child: AppStatCard(
+                label: "Today's Sales",
+                value: '₹ 4,85,000',
+                icon: Icons.payments_outlined,
+                deltaText: '+14.2%',
+                deltaPositive: true,
+                onTap: () {},
+              ),
+            ),
+            SizedBox(
+              width: 280,
+              child: AppStatCard(
+                label: 'Stock Value',
+                value: '₹ 1.45 Cr',
+                icon: Icons.two_wheeler_outlined,
+                deltaText: '28 Units',
+                deltaPositive: true,
+                onTap: () {},
+              ),
+            ),
+            SizedBox(
+              width: 280,
+              child: AppStatCard(
+                label: 'Pending Receivables',
+                value: '₹ 3,40,000',
+                icon: Icons.account_balance_wallet_outlined,
+                deltaText: '-4.8%',
+                deltaPositive: false,
+                onTap: () {},
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: AppDimensions.space24),
+
+        // Badges row
+        const AppSectionHeader(
+          title: 'Status Badges',
+          subtitle: 'Semantic state indicators for orders, stock, and invoices',
+        ),
+        Wrap(
+          spacing: AppDimensions.space8,
+          runSpacing: AppDimensions.space8,
+          children: <Widget>[
+            AppStatusBadge.fromKey(statusKey: 'Available'),
+            AppStatusBadge.fromKey(statusKey: 'In Stock'),
+            AppStatusBadge.fromKey(statusKey: 'Low Stock'),
+            AppStatusBadge.fromKey(statusKey: 'Delivered'),
+            AppStatusBadge.fromKey(statusKey: 'Pending'),
+            AppStatusBadge.fromKey(statusKey: 'Cancelled'),
+            AppStatusBadge.fromKey(statusKey: 'Draft'),
+          ],
+        ),
+        const SizedBox(height: AppDimensions.space24),
+
+        // Buttons row
+        const AppSectionHeader(
+          title: 'Buttons & Controls',
+          subtitle: 'Action buttons with variants, touch targets, and loading states',
+        ),
+        Wrap(
+          spacing: AppDimensions.space12,
+          runSpacing: AppDimensions.space12,
+          crossAxisAlignment: WrapCrossAlignment.center,
+          children: <Widget>[
+            AppButton(
+              text: 'Primary CTA',
+              icon: Icons.add,
+              onPressed: () {},
+            ),
+            AppOutlinedButton(
+              text: 'Outlined Action',
+              icon: Icons.tune,
+              onPressed: () {},
+            ),
+            const AppButton(
+              text: 'Loading Spinner',
+              loading: true,
+            ),
+            AppButton(
+              text: 'Danger Action',
+              variant: AppButtonVariant.danger,
+              icon: Icons.delete_outline,
+              onPressed: () {},
+            ),
+          ],
+        ),
+        const SizedBox(height: AppDimensions.space24),
+
+        // Inputs preview
+        const AppSectionHeader(
+          title: 'Form Fields & Search',
+          subtitle: 'Standardized text input, search with clear button, and currency',
+        ),
+        Wrap(
+          spacing: AppDimensions.space16,
+          runSpacing: AppDimensions.space16,
+          children: <Widget>[
+            SizedBox(
+              width: 320,
+              child: AppSearchField(
+                hint: 'Search vehicles, VIN, or customer...',
+                onChanged: (_) {},
+              ),
+            ),
+            const SizedBox(
+              width: 260,
+              child: AppTextField(
+                label: 'Customer Mobile',
+                hint: '10-digit mobile number',
+                prefixIcon: Icons.phone_outlined,
+              ),
+            ),
+            const SizedBox(
+              width: 220,
+              child: AppCard(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: <Widget>[
+                    Text(
+                      'TOTAL BOOKING AMOUNT',
+                      style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600),
+                    ),
+                    SizedBox(height: 4),
+                    AppCurrencyText(125000, large: true),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
       ],
     );
   }
@@ -183,7 +352,7 @@ class ModuleGridSection extends StatelessWidget {
                     in NavigationRegistry.sidebarEntries)
                   SizedBox(
                     width: cardWidth,
-                    child: _ModuleCard(
+                    child: FoundationModuleCard(
                       entry: entry,
                       palette: palette,
                       currentPath: currentPath,
@@ -216,12 +385,12 @@ class TypographySection extends StatelessWidget {
           spacing: AppDimensions.space24,
           runSpacing: AppDimensions.space8,
           children: <Widget>[
-            _TypeSample('Display', text.displayLarge, palette),
-            _TypeSample('Headline', text.headlineMedium, palette),
-            _TypeSample('Title', text.titleLarge, palette),
-            _TypeSample('Body', text.bodyMedium, palette),
-            _TypeSample('Label', text.labelLarge, palette),
-            _TypeSample('Caption', text.bodySmall, palette),
+            TypeSample('Display', text.displayLarge, palette),
+            TypeSample('Headline', text.headlineMedium, palette),
+            TypeSample('Title', text.titleLarge, palette),
+            TypeSample('Body', text.bodyMedium, palette),
+            TypeSample('Label', text.labelLarge, palette),
+            TypeSample('Caption', text.bodySmall, palette),
           ],
         ),
       ],
@@ -229,17 +398,17 @@ class TypographySection extends StatelessWidget {
   }
 }
 
-class _StatusItem {
-  const _StatusItem(this.title, this.value, this.icon);
+class FoundationStatusItem {
+  const FoundationStatusItem(this.title, this.value, this.icon);
   final String title;
   final String value;
   final IconData icon;
 }
 
-class _StatusCard extends StatelessWidget {
-  const _StatusCard({required this.item, required this.palette});
+class FoundationStatusCard extends StatelessWidget {
+  const FoundationStatusCard({required this.item, required this.palette, super.key});
 
-  final _StatusItem item;
+  final FoundationStatusItem item;
   final AppPalette palette;
 
   @override
@@ -288,11 +457,12 @@ class _StatusCard extends StatelessWidget {
   }
 }
 
-class _ModuleCard extends StatelessWidget {
-  const _ModuleCard({
+class FoundationModuleCard extends StatelessWidget {
+  const FoundationModuleCard({
     required this.entry,
     required this.palette,
     required this.currentPath,
+    super.key,
   });
 
   final NavigationEntry entry;
@@ -340,8 +510,8 @@ class _ModuleCard extends StatelessWidget {
   }
 }
 
-class _TypeSample extends StatelessWidget {
-  const _TypeSample(this.label, this.style, this.palette);
+class TypeSample extends StatelessWidget {
+  const TypeSample(this.label, this.style, this.palette, {super.key});
 
   final String label;
   final TextStyle? style;

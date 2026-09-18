@@ -7,6 +7,10 @@ abstract final class AppRoutes {
   static const String rootPath = '/';
   static const String notFoundPath = '/not-found';
 
+  // ── Phase 2 design-system gallery ──────────────────────────────────────
+  static const String galleryName = 'gallery';
+  static const String galleryPath = '/gallery';
+
   // ── Core ───────────────────────────────────────────────────────────────
   static const String dashboardName = 'dashboard';
   static const String dashboardPath = '/dashboard';

@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:mybike_showroom/common/layouts/app_scaffold.dart';
 import 'package:mybike_showroom/common/screens/config_error_screen.dart';
 import 'package:mybike_showroom/common/screens/foundation_screen.dart';
+import 'package:mybike_showroom/common/screens/gallery_screen.dart';
 import 'package:mybike_showroom/common/screens/module_placeholder_screen.dart';
 import 'package:mybike_showroom/common/screens/not_found_screen.dart';
 import 'package:mybike_showroom/core/constants/module_keys.dart';
@@ -14,6 +15,9 @@ import 'package:mybike_showroom/core/routes/navigation_registry.dart';
 /// A [ShellRoute] wraps every module route in [AppScaffold] so the responsive
 /// navigation shell (desktop sidebar / tablet rail / mobile bottom bar) persists
 /// across navigation.  Authentication guards are added in Phase 5.
+///
+/// The `/gallery` route is deliberately registered **outside** the shell so the
+/// design-system gallery fills the full viewport without the sidebar overlay.
 abstract final class AppRouter {
   /// Builds the [GoRouter] so tests can supply an initial location.
   static GoRouter createRouter({
@@ -44,6 +48,13 @@ abstract final class AppRouter {
                       ModulePlaceholderScreen(moduleKey: entry.moduleKey),
                 ),
           ],
+        ),
+        // Phase 2: design-system gallery — outside the shell so it fills the full
+        // viewport.  Remove or guard this route before production in Phase 27.
+        GoRoute(
+          path: AppRoutes.galleryPath,
+          name: AppRoutes.galleryName,
+          builder: (_, _) => const GalleryScreen(),
         ),
         GoRoute(
           path: '/config-error',

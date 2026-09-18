@@ -46,6 +46,9 @@ class AppPalette extends ThemeExtension<AppPalette> {
   /// Content colour on top of [brandPrimary] (brand black).
   final Color onBrandPrimary;
 
+  /// Convenience alias for [onBrandPrimary].
+  Color get brandOnPrimary => onBrandPrimary;
+
   /// Translucent brand yellow used for selected/soft backgrounds.
   final Color brandSoft;
 

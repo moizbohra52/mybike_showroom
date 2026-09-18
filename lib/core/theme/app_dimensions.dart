@@ -41,6 +41,7 @@ abstract final class AppDimensions {
   static const double iconMd = 20;
   static const double icon = 24;
   static const double iconLg = 32;
+  static const double iconXl = 40;
 
   // ── Layout shell ───────────────────────────────────────────────────────
   static const double sidebarWidth = 264;
@@ -56,6 +57,7 @@ abstract final class AppDimensions {
   static const double sheetMaxWidth = 640;
   static const double cardMinWidth = 240;
   static const double kpiCardMinWidth = 220;
+  static const double tableHeaderHeight = 44;
   static const double tableRowHeight = 52;
 
   // ── Breakpoints (docs/phase-00/03-architecture.md §7) ──────────────────

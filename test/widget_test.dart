@@ -14,14 +14,23 @@ import 'package:mybike_showroom/core/theme/theme_controller.dart';
 
 import 'helpers/fake_preference_store.dart';
 
-/// Pumps the Phase 1 app shell at a fixed physical size with a fresh router.
+/// Pumps the Phase 1/2 app shell at a fixed physical size with a fresh router.
 ///
 /// Every test builds its own router via [AppRouter.createRouter] so navigation
 /// state never leaks between tests, and overrides the theme bootstrap with an
 /// explicit value exactly like `main()` does.
 ///
-/// Returns the router in use so tests navigate through the same instance the
-/// widget tree observes.
+/// [FoundationScreen] contains perpetual animations — the [AppShimmer] pulse
+/// loop and the [AppButton] `loading: true` spinner in the design-system
+/// showcase — that prevent [WidgetTester.pumpAndSettle] from ever resolving.
+/// We therefore pump a fixed duration (1 s) so the router initialises and the
+/// first frame renders, then proceed without waiting for animations to stop.
+/// This is the standard Flutter approach for screens with infinite animations.
+///
+/// Post-navigation [pumpAndSettle] calls are fine because [ModulePlaceholderScreen]
+/// and [NotFoundScreen] have no perpetual animations.
+///
+/// Returns the store and router so tests can inspect state and navigate.
 Future<(FakePreferenceStore, GoRouter)> pumpApp(
   WidgetTester tester, {
   required Size size,
@@ -49,7 +58,10 @@ Future<(FakePreferenceStore, GoRouter)> pumpApp(
       ),
     ),
   );
-  await tester.pumpAndSettle();
+  // FoundationScreen has perpetual animations (shimmer pulse + loading button
+  // showcase). pump(duration) advances the clock enough to build the first
+  // frame without hanging on an animation that never settles.
+  await tester.pump(const Duration(seconds: 1));
   return (store, router);
 }
 
@@ -71,12 +83,13 @@ void main() {
     // Navigate via the sidebar tile (ListTile avoids matching the module
     // card that carries the same label).
     await tester.tap(find.widgetWithText(ListTile, 'Inventory'));
+    // ModulePlaceholderScreen has no infinite animations — pumpAndSettle is safe.
     await tester.pumpAndSettle();
 
     expect(find.byType(ModulePlaceholderScreen), findsOneWidget);
     expect(find.text('Planned in Phase 9'), findsOneWidget);
 
-    // The compact theme switcher cycles system ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ light and persists it.
+    // The compact theme switcher cycles system → light and persists it.
     await tester.tap(find.widgetWithText(TextButton, 'System'));
     await tester.pumpAndSettle();
 
@@ -117,7 +130,7 @@ void main() {
   ) async {
     await pumpApp(tester, size: const Size(1280, 800));
 
-    // Sidebar ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ Showrooms (Phase 7 module).
+    // Sidebar → Showrooms (Phase 7 module).
     await tester.tap(find.widgetWithText(ListTile, 'Showrooms'));
     await tester.pumpAndSettle();
 
