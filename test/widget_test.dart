@@ -1,13 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:go_router/go_router.dart';
 import 'package:mybike_showroom/common/screens/foundation_screen.dart';
 import 'package:mybike_showroom/common/screens/module_placeholder_screen.dart';
+import 'package:mybike_showroom/common/screens/not_found_screen.dart';
 import 'package:mybike_showroom/core/constants/storage_keys.dart';
 import 'package:mybike_showroom/core/routes/app_router.dart';
+import 'package:mybike_showroom/core/storage/preference_store.dart';
 import 'package:mybike_showroom/core/theme/app_theme.dart';
 import 'package:mybike_showroom/core/theme/app_theme_mode.dart';
-import 'package:mybike_showroom/core/storage/preference_store.dart';
 import 'package:mybike_showroom/core/theme/theme_controller.dart';
 
 import 'helpers/fake_preference_store.dart';
@@ -17,7 +19,10 @@ import 'helpers/fake_preference_store.dart';
 /// Every test builds its own router via [AppRouter.createRouter] so navigation
 /// state never leaks between tests, and overrides the theme bootstrap with an
 /// explicit value exactly like `main()` does.
-Future<FakePreferenceStore> pumpApp(
+///
+/// Returns the router in use so tests navigate through the same instance the
+/// widget tree observes.
+Future<(FakePreferenceStore, GoRouter)> pumpApp(
   WidgetTester tester, {
   required Size size,
   AppThemeMode themeMode = AppThemeMode.system,
@@ -27,10 +32,11 @@ Future<FakePreferenceStore> pumpApp(
   addTearDown(tester.view.reset);
 
   final FakePreferenceStore store = FakePreferenceStore();
+  final GoRouter router = AppRouter.createRouter();
 
   await tester.pumpWidget(
     ProviderScope(
-      overrides: <Object>[
+      overrides: [
         bootstrapThemeModeProvider.overrideWithValue(themeMode),
         preferenceStoreProvider.overrideWithValue(store),
       ],
@@ -38,23 +44,22 @@ Future<FakePreferenceStore> pumpApp(
         theme: AppTheme.light,
         darkTheme: AppTheme.dark,
         themeMode: themeMode.materialThemeMode,
-        routerConfig: AppRouter.createRouter(),
+        routerConfig: router,
         debugShowCheckedModeBanner: false,
       ),
     ),
   );
   await tester.pumpAndSettle();
-  return store;
+  return (store, router);
 }
 
 void main() {
   testWidgets('desktop shell renders dashboard, navigates and persists theme', (
     WidgetTester tester,
   ) async {
-    final FakePreferenceStore store = await pumpApp(
+    final (FakePreferenceStore store, _) = await pumpApp(
       tester,
       size: const Size(1280, 800),
-      themeMode: AppThemeMode.system,
     );
 
     // Dashboard content is visible inside the desktop shell.
@@ -71,7 +76,7 @@ void main() {
     expect(find.byType(ModulePlaceholderScreen), findsOneWidget);
     expect(find.text('Planned in Phase 9'), findsOneWidget);
 
-    // The compact theme switcher cycles system â†’ light and persists it.
+    // The compact theme switcher cycles system ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ light and persists it.
     await tester.tap(find.widgetWithText(TextButton, 'System'));
     await tester.pumpAndSettle();
 
@@ -112,10 +117,25 @@ void main() {
   ) async {
     await pumpApp(tester, size: const Size(1280, 800));
 
-    // Sidebar â†’ Showrooms (Phase 7 module).
+    // Sidebar ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ Showrooms (Phase 7 module).
     await tester.tap(find.widgetWithText(ListTile, 'Showrooms'));
     await tester.pumpAndSettle();
 
     expect(find.text('Planned in Phase 7'), findsOneWidget);
+  });
+
+  testWidgets('unknown route renders the 404 screen', (
+    WidgetTester tester,
+  ) async {
+    final (_, GoRouter router) = await pumpApp(
+      tester,
+      size: const Size(1280, 800),
+    );
+
+    router.go('/definitely-not-a-route');
+    await tester.pumpAndSettle();
+
+    expect(find.byType(NotFoundScreen), findsOneWidget);
+    expect(find.textContaining('404'), findsOneWidget);
   });
 }

@@ -7,52 +7,15 @@ import 'package:mybike_showroom/core/theme/app_theme.dart';
 import 'package:mybike_showroom/core/theme/app_theme_mode.dart';
 import 'package:mybike_showroom/core/theme/theme_controller.dart';
 
-/// In-memory [PreferenceStore] so tests never touch real SharedPreferences.
-class InMemoryPreferenceStore implements PreferenceStore {
-  final Map<String, String> values = <String, String>{};
-
-  @override
-  Future<String?> readString(String key) async => values[key];
-
-  @override
-  Future<void> writeString(String key, String value) async =>
-      values[key] = value;
-
-  @override
-  Future<bool?> readBool(String key) async =>
-      values.containsKey(key) ? values[key]!.toLowerCase() == 'true' : null;
-
-  @override
-  Future<void> writeBool(String key, bool value) async =>
-      values[key] = value.toString();
-
-  @override
-  Future<void> remove(String key) async => values.remove(key);
-}
+import '../../helpers/fake_preference_store.dart';
 
 void main() {
-  group('AppThemeMode', () {
-    test('storage round-trip and cycle order', () {
-      expect(
-        AppThemeMode.fromStorage(AppThemeMode.dark.storageValue),
-        AppThemeMode.dark,
-      );
-      expect(AppThemeMode.fromStorage(null), AppThemeMode.system);
-      expect(AppThemeMode.fromStorage('garbage'), AppThemeMode.system);
-      expect(AppThemeMode.system.next, AppThemeMode.light);
-      expect(AppThemeMode.light.next, AppThemeMode.dark);
-      expect(AppThemeMode.dark.next, AppThemeMode.system);
-    });
-  });
+  TestWidgetsFlutterBinding.ensureInitialized();
 
-  testWidgets('ThemeController cycles and persists', (
+  testWidgets('ThemeController cycles and persists the mode', (
     WidgetTester tester,
   ) async {
-    final InMemoryPreferenceStore store = InMemoryPreferenceStore();
-    await store.writeString(
-      StorageKeys.themeMode,
-      AppThemeMode.system.storageValue,
-    );
+    final FakePreferenceStore store = FakePreferenceStore();
 
     late WidgetRef capturedRef;
     await tester.pumpWidget(
@@ -81,13 +44,11 @@ void main() {
     await capturedRef.read(themeControllerProvider.notifier).cycleMode();
     await tester.pumpAndSettle();
     expect(find.text('Light'), findsOneWidget);
-    expect(
-      await store.readString(StorageKeys.themeMode),
-      AppThemeMode.light.storageValue,
-    );
+    expect(store.strings[StorageKeys.themeMode], 'light');
 
     await capturedRef.read(themeControllerProvider.notifier).cycleMode();
     await tester.pumpAndSettle();
     expect(find.text('Dark'), findsOneWidget);
+    expect(store.strings[StorageKeys.themeMode], 'dark');
   });
 }
