@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 /// Build environment classification.
 enum AppEnvironment {
   dev,
@@ -47,9 +49,13 @@ class EnvValidation {
 /// flutter run -d windows --dart-define-from-file=config/dev.json
 /// ```
 ///
+/// Templates for the define files live in `config/*.example.json` (see
+/// `config/README.md`); the real `config/<env>.json` files are git-ignored.
+///
 /// Only the Supabase anon/publishable key may reach the client — the
-/// `service_role` key lives exclusively in Edge Function secrets
-/// (see docs/phase-00/04-multishowroom-security.md §9).
+/// `service_role` / secret key lives exclusively in Edge Function secrets
+/// (ground rule G4, docs/phase-00/04-multishowroom-security.md §9).
+/// [validate] rejects a build that was given one by mistake.
 class EnvConfig {
   const EnvConfig({
     required this.environment,
@@ -60,12 +66,52 @@ class EnvConfig {
     this.enableNetworkLogs = false,
   });
 
-  /// Reads the defines compiled into this build.
+  /// Reads the defines compiled into this build:
+  ///
+  /// | Define              | Field               | Default   |
+  /// |---------------------|---------------------|-----------|
+  /// | `APP_ENV`           | [environment]       | `dev`     |
+  /// | `SUPABASE_URL`      | [supabaseUrl]       | empty     |
+  /// | `SUPABASE_ANON_KEY` | [supabaseAnonKey]   | empty     |
+  /// | `API_BASE_URL`      | [apiBaseUrl]        | empty     |
+  /// | `GIT_SHA`           | [gitSha]            | `local`   |
+  /// | `LOG_NETWORK`       | [enableNetworkLogs] | `false`   |
+  ///
+  /// Every value is a compile-time constant (`String.fromEnvironment` /
+  /// `bool.fromEnvironment`), so nothing is parsed from a bundled asset at
+  /// runtime. Normalisation is delegated to [EnvConfig.fromDefines].
   factory EnvConfig.fromEnvironment() {
+    return EnvConfig.fromDefines(
+      appEnv: const String.fromEnvironment('APP_ENV', defaultValue: 'dev'),
+      supabaseUrl: const String.fromEnvironment('SUPABASE_URL'),
+      supabaseAnonKey: const String.fromEnvironment('SUPABASE_ANON_KEY'),
+      apiBaseUrl: const String.fromEnvironment('API_BASE_URL'),
+      gitSha: const String.fromEnvironment('GIT_SHA', defaultValue: 'local'),
+      logNetwork: const bool.fromEnvironment('LOG_NETWORK'),
+    );
+  }
+
+  /// Builds a configuration from raw define values (testable without
+  /// `--dart-define`). String values are trimmed so a stray space or newline
+  /// pasted into `config/<env>.json` cannot break the Supabase connection,
+  /// `APP_ENV` is parsed by [AppEnvironment.fromName], and a blank `GIT_SHA`
+  /// falls back to `local`.
+  factory EnvConfig.fromDefines({
+    required String appEnv,
+    required String supabaseUrl,
+    required String supabaseAnonKey,
+    required String apiBaseUrl,
+    required String gitSha,
+    required bool logNetwork,
+  }) {
+    final String sha = gitSha.trim();
     return EnvConfig(
-      environment: AppEnvironment.fromName(
-        const String.fromEnvironment('APP_ENV', defaultValue: 'dev'),
-      ),
+      environment: AppEnvironment.fromName(appEnv),
+      supabaseUrl: supabaseUrl.trim(),
+      supabaseAnonKey: supabaseAnonKey.trim(),
+      apiBaseUrl: apiBaseUrl.trim(),
+      gitSha: sha.isEmpty ? 'local' : sha,
+      enableNetworkLogs: logNetwork,
     );
   }
 
@@ -109,6 +155,16 @@ class EnvConfig {
       );
     }
 
+    // The key itself is never echoed: the message is shown on screen.
+    if (hasKey && isServiceRoleKey(supabaseAnonKey)) {
+      problems.add(
+        'SUPABASE_ANON_KEY holds a service_role / secret key. Never ship the '
+        'service role / secret key in Flutter (ground rule G4): it bypasses '
+        'Row Level Security. Use the anon or publishable key from Supabase '
+        'Dashboard → Project Settings → API, and rotate the leaked key.',
+      );
+    }
+
     if (hasUrl && !isSecureHttpUrl(supabaseUrl)) {
       problems.add(
         'SUPABASE_URL must be an https:// URL (localhost is allowed for local '
@@ -143,6 +199,40 @@ class EnvConfig {
     }
 
     return EnvValidation(problems: problems, warnings: warnings);
+  }
+
+  /// True when [key] looks like a Supabase key that must never reach a client
+  /// (ground rule G4):
+  ///
+  /// * a new-style secret key (`sb_secret_…`; client builds use
+  ///   `sb_publishable_…`), or
+  /// * a legacy JWT key whose payload (the base64url middle segment) is a JSON
+  ///   object with `"role": "service_role"` (the anon JWT has `"role": "anon"`).
+  ///
+  /// Only the payload is inspected — the signature is not verified, this is a
+  /// classification, not authentication. Never throws: anything that is not a
+  /// decodable JWT (garbage, empty, truncated) is reported as `false`.
+  static bool isServiceRoleKey(String key) {
+    final String trimmed = key.trim();
+    if (trimmed.startsWith('sb_secret_')) {
+      return true;
+    }
+
+    final List<String> segments = trimmed.split('.');
+    if (segments.length != 3 || segments[1].isEmpty) {
+      return false;
+    }
+
+    try {
+      final String payloadJson = utf8.decode(
+        base64Url.decode(base64Url.normalize(segments[1])),
+      );
+      final Object? payload = jsonDecode(payloadJson);
+      return payload is Map<String, Object?> &&
+          payload['role'] == 'service_role';
+    } on FormatException {
+      return false;
+    }
   }
 
   /// Accepts `https://` URLs plus `http://localhost` for local development.

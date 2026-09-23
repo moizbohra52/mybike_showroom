@@ -166,7 +166,7 @@ class _GalleryScreenState extends State<GalleryScreen> {
               child: Wrap(
                 spacing: AppDimensions.space8,
                 runSpacing: AppDimensions.space8,
-                children: const <Widget>[
+                children: <Widget>[
                   AppStatusBadge.fromKey(statusKey: 'Available'),
                   AppStatusBadge.fromKey(statusKey: 'In Stock'),
                   AppStatusBadge.fromKey(statusKey: 'Low Stock'),

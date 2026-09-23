@@ -43,3 +43,8 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# Build-time defines (--dart-define-from-file): real values stay local, only
+# the placeholder templates are committed (see config/README.md).
+config/*.json
+!config/*.example.json
