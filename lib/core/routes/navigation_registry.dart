@@ -51,6 +51,9 @@ class NavigationEntry {
 
   IconData get effectiveSelectedIcon => selectedIcon ?? icon;
 
+  /// True for the module path and its sub-routes (`/users`, `/users/<id>`).
+  bool matches(String location) => location == path || location.startsWith('$path/');
+
   /// Permission check used for visibility.
   ///
   /// `grantedPermissions == null` means "permissions not loaded yet". Until
@@ -287,7 +290,7 @@ abstract final class NavigationRegistry {
 
   static NavigationEntry? byPath(String path) {
     for (final NavigationEntry entry in entries) {
-      if (entry.path == path) {
+      if (entry.matches(path)) {
         return entry;
       }
     }

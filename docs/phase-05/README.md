@@ -44,8 +44,8 @@ sidebar, rail and bottom bar hide those modules. All of this is UI convenience â
   environment, rejects unfilled `<placeholder>` values and service-role / secret keys. The key is passed as
   `publishableKey` (legacy anon JWTs still work).
 - **Android:** `INTERNET` permission added to the main manifest (Flutter adds it to debug builds only).
-- **No self sign-up / password reset screen:** accounts come from administrators (Phase 6
-  `admin-create-user`); password reset needs the Supabase email/SMTP set-up and is left for Phase 6.
+- **No self sign-up / password reset screen:** accounts come from administrators (Phase 6 `admin-users` Edge
+  Function, which also lets an administrator set a new password); email reset links need SMTP on the project.
 
 ## Remote project settings (not covered by `config.toml`, which is local only)
 

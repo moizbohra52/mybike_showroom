@@ -299,8 +299,11 @@ select set_eq(
   $$ values ('fn_business_date'), ('fn_fy_start_date'), ('fn_fy_code'), ('fn_fy_short_code'),
             ('fn_is_gst_document'), ('fn_document_type_code'), ('current_profile_id'),
             ('is_active_user'), ('is_super_admin'), ('can_access_showroom'), ('accessible_showroom_ids'),
-            ('has_permission_for'), ('has_permission'), ('can_view_profile'), ('fn_try_uuid'), ('rpc_get_my_session') $$,
-  'functions: authenticated can execute exactly the 16 granted helpers and RPCs'
+            ('has_permission_for'), ('has_permission'), ('can_view_profile'), ('fn_try_uuid'), ('rpc_get_my_session'),
+            ('my_role_rank'), ('can_manage_user_in'), ('can_manage_user'), ('can_assign_role'), ('can_edit_role'),
+            ('rpc_admin_update_user'), ('rpc_admin_set_user_status'), ('rpc_get_user_access'),
+            ('rpc_grantable_roles') $$,
+  'functions: authenticated can execute exactly the 25 granted helpers and RPCs'
 );
 
 select set_eq(
@@ -311,8 +314,11 @@ select set_eq(
   $$ values ('fn_bootstrap_showroom'), ('fn_handle_new_auth_user'),
             ('fn_sync_auth_user_email'), ('current_profile_id'),
             ('is_active_user'), ('is_super_admin'), ('can_access_showroom'), ('accessible_showroom_ids'),
-            ('has_permission_for'), ('has_permission'), ('can_view_profile'), ('rpc_get_my_session') $$,
-  'functions: the SECURITY DEFINER functions are exactly the 12 reviewed ones'
+            ('has_permission_for'), ('has_permission'), ('can_view_profile'), ('rpc_get_my_session'),
+            ('my_role_rank'), ('can_manage_user_in'), ('can_manage_user'), ('can_assign_role'), ('can_edit_role'),
+            ('rpc_admin_update_user'), ('rpc_admin_set_user_status'), ('rpc_get_user_access'),
+            ('fn_sync_auth_user_invited_by') $$,
+  'functions: the SECURITY DEFINER functions are exactly the 21 reviewed ones'
 );
 
 select is_empty(

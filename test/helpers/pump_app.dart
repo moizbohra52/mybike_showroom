@@ -8,7 +8,10 @@ import 'package:mybike_showroom/core/theme/app_theme.dart';
 import 'package:mybike_showroom/core/theme/app_theme_mode.dart';
 import 'package:mybike_showroom/core/theme/theme_controller.dart';
 import 'package:mybike_showroom/features/auth/data/auth_repository.dart';
+import 'package:mybike_showroom/features/roles/data/roles_repository.dart';
+import 'package:mybike_showroom/features/users/data/users_repository.dart';
 
+import 'fake_admin_repositories.dart';
 import 'fake_auth_repository.dart';
 import 'fake_preference_store.dart';
 
@@ -21,6 +24,8 @@ Future<(FakePreferenceStore, GoRouter)> pumpMyBikeApp(
   required Size size,
   required FakeAuthRepository auth,
   FakePreferenceStore? store,
+  FakeUsersRepository? users,
+  FakeRolesRepository? roles,
   AppThemeMode themeMode = AppThemeMode.system,
 }) async {
   tester.view.physicalSize = size;
@@ -33,6 +38,8 @@ Future<(FakePreferenceStore, GoRouter)> pumpMyBikeApp(
       bootstrapThemeModeProvider.overrideWithValue(themeMode),
       preferenceStoreProvider.overrideWithValue(preferences),
       authRepositoryProvider.overrideWithValue(auth),
+      if (users != null) usersRepositoryProvider.overrideWithValue(users),
+      if (roles != null) rolesRepositoryProvider.overrideWithValue(roles),
     ],
   );
   addTearDown(container.dispose);

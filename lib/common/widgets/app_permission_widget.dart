@@ -1,24 +1,20 @@
 import 'package:flutter/material.dart';
-import 'package:mybike_showroom/core/constants/module_keys.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:mybike_showroom/features/auth/application/session_controller.dart';
 
-/// Conditionally renders [child] based on whether the caller holds [permission].
+/// Renders [child] only when the caller holds [permission] (`module.action`).
 ///
-/// Phase 2: the permission set is not yet wired to a real session, so the
-/// widget defaults to **showing** content (permissive mode) while the
-/// authentication + role system (Phase 5/6) is absent.  Once those phases
-/// land, callers simply pass the resolved [Set<String>] from the session
-/// service and this widget enforces the restriction automatically.
+/// UI convenience only — RLS enforces the rule (G1). [permissions] defaults to
+/// the signed-in user's permissions in the current showroom; the widget fails
+/// closed: signed out, still loading or no showroom chosen → [fallback].
 ///
-/// Usage:
 /// ```dart
 /// AppPermissionWidget(
-///   permission: ModuleKeys.sales,           // required permission key
-///   permissions: resolvedPermissionsOrNull, // null → always shows (Phase 2)
-///   child: ElevatedButton(onPressed: _sell, child: Text('Sell')),
-///   fallback: Text('No access'),            // optional; defaults to SizedBox.shrink()
+///   permission: 'users.create',
+///   child: AppButton(text: 'New user', onPressed: openForm),
 /// )
 /// ```
-class AppPermissionWidget extends StatelessWidget {
+class AppPermissionWidget extends ConsumerWidget {
   const AppPermissionWidget({
     required this.permission,
     required this.child,
@@ -27,32 +23,20 @@ class AppPermissionWidget extends StatelessWidget {
     super.key,
   });
 
-  /// The permission key that must be present in [permissions].
-  ///
-  /// Use constants from [ModuleKeys] or the role-permission string constants
-  /// that will be introduced in Phase 6.
+  /// The permission code that must be granted, e.g. `sales.create`.
   final String permission;
 
-  /// The resolved set of permission keys for the current user + showroom.
-  ///
-  /// When `null` (Phase 2 default / Phase 5 loading state) the widget shows
-  /// [child] — permissive-by-default while auth is not yet wired.
+  /// Overrides the session permissions (tests, previews).
   final Set<String>? permissions;
 
-  /// Widget to show when [permission] is absent from [permissions].
-  ///
-  /// Defaults to [SizedBox.shrink] (invisible, zero-size).
+  /// Shown instead of [child]; defaults to nothing.
   final Widget? fallback;
 
-  /// The widget to render when the caller has [permission].
   final Widget child;
 
-  /// Returns `true` when the user has [permission] or the permissions set is
-  /// not yet resolved (`null`).
-  bool get _hasAccess => permissions == null || permissions!.contains(permission);
-
   @override
-  Widget build(BuildContext context) {
-    return _hasAccess ? child : (fallback ?? const SizedBox.shrink());
+  Widget build(BuildContext context, WidgetRef ref) {
+    final Set<String> granted = permissions ?? ref.watch(currentPermissionsProvider);
+    return granted.contains(permission) ? child : (fallback ?? const SizedBox.shrink());
   }
 }

@@ -213,6 +213,7 @@ abstract final class FailureMessages {
   static const String notFound = 'The requested record could not be found.';
   static const String validation = 'Please correct the highlighted fields.';
   static const String duplicate = 'This record already exists.';
+  static const String inUse = 'This record is still in use and cannot be deleted.';
   static const String unknown = 'Something went wrong. Please try again.';
   static const String insufficientStock =
       'Not enough stock available for this operation.';

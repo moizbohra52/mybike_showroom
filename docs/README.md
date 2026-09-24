@@ -51,6 +51,7 @@ Edge Functions)** with **Dio** for raw HTTP and **Firebase Cloud Messaging** for
 | `phase-03/README.md` | Phase 3 as built: schema, privilege model, numbering, SQLSTATE catalogue, deviations, how to run |
 | `phase-04/README.md` | Phase 4 as built: RBAC helpers, per-table policies, storage buckets/policies, security-test coverage |
 | `phase-05/README.md` | Phase 5 as built: sign-in flow, session RPC, router guard, showroom selection, remote auth settings |
+| `phase-06/README.md` | Phase 6 as built: delegation rules (rank), user / role screens, permission matrix, `admin-users` Edge Function |
 
 ## 4. Status
 
@@ -62,5 +63,6 @@ Edge Functions)** with **Dio** for raw HTTP and **Firebase Cloud Messaging** for
 | Phase 3 (Supabase Database Foundation) | **IMPLEMENTED** — 4 migrations + dev seed, 218 pgTAP assertions green on an embedded Postgres; remote `supabase db push` pending project link |
 | Phase 4 (Supabase Security) | **IMPLEMENTED** — RBAC helpers + RLS on all 13 tables + 6 storage buckets; 307 pgTAP assertions green; remote push pending |
 | Phase 5 (Authentication) | **IMPLEMENTED** — login / session / showroom selection / guards; 323 pgTAP + 122 Flutter tests green; web + Android build verified |
+| Phase 6 (Users / Roles / Permissions) | **IMPLEMENTED** — user & role management, permission matrix, rank-based delegation in RLS, `admin-users` Edge Function; 403 pgTAP + 10 Deno + 143 Flutter tests green; web + Android build verified |
 | Toolchain verified | Flutter 3.44.8 stable, Dart 3.12.2 (Windows host) |
 | Package versions | verified on pub.dev at time of writing — see `phase-00/07-dependency-plan.md` |

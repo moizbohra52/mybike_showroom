@@ -29,8 +29,7 @@ class AppScaffold extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final SessionState? session = ref.watch(sessionControllerProvider).value;
-    final Set<String> permissions = session is SignedIn ? session.permissions : const <String>{};
+    final Set<String> permissions = ref.watch(currentPermissionsProvider);
     final Breakpoint breakpoint = context.breakpoint;
 
     if (breakpoint.usesSidebar) {
@@ -100,7 +99,7 @@ class DesktopShell extends StatelessWidget {
                             in NavigationRegistry.visibleFor(permissions))
                           _SidebarTile(
                             entry: entry,
-                            selected: entry.path == currentPath,
+                            selected: entry.matches(currentPath),
                             onTap: () => context.go(entry.path),
                           ),
                       ],
@@ -182,7 +181,7 @@ class TabletShell extends StatelessWidget {
     final AppPalette palette = AppPalette.of(context);
     final List<NavigationEntry> entries = NavigationRegistry.visibleFor(permissions);
     final int selectedIndex = entries.indexWhere(
-      (NavigationEntry e) => e.path == currentPath,
+      (NavigationEntry e) => e.matches(currentPath),
     );
 
     return Scaffold(
@@ -262,7 +261,7 @@ class MobileShell extends StatelessWidget {
   Widget build(BuildContext context) {
     final List<NavigationEntry> primary = NavigationRegistry.mobilePrimary(permissions);
     final int selectedIndex = primary.indexWhere(
-      (NavigationEntry e) => e.path == currentPath,
+      (NavigationEntry e) => e.matches(currentPath),
     );
 
     return Scaffold(

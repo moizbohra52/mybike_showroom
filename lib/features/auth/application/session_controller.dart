@@ -40,6 +40,14 @@ final class SignedIn extends SessionState {
       (selection == null || selection!.isAll) ? null : session?.showroomById(selection!.showroomId!);
 }
 
+/// Permissions in the current showroom context; empty unless signed in with a
+/// showroom (or ALL SHOWROOMS) selected. UI gating only — RLS decides.
+@riverpod
+Set<String> currentPermissions(Ref ref) {
+  final SessionState? state = ref.watch(sessionControllerProvider).value;
+  return state is SignedIn ? state.permissions : const <String>{};
+}
+
 /// Loads the session after sign-in / app start, keeps the showroom choice and
 /// clears everything on sign-out.
 @Riverpod(keepAlive: true)

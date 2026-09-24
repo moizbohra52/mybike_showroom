@@ -155,9 +155,9 @@ select set_config('request.jwt.claims', '{"sub":"a0000000-0000-4000-8000-0000000
 select is((select count(*)::int from public.profiles), 14, 'profiles: admin (global users.view) sees all 14 profiles');
 select throws_ok(
   $$ insert into public.user_roles (profile_id, role_id)
-     select 'a0000000-0000-4000-8000-000000000006', r.id from public.roles r where r.code = 'VIEWER' $$,
+     select 'a0000000-0000-4000-8000-000000000006', r.id from public.roles r where r.code = 'ADMIN' $$,
   '42501', null,
-  'escalation: admin (no global roles.edit) cannot assign roles');
+  'escalation: admin cannot grant a role of its own rank (ADMIN)');
 select lives_ok(
   $$ insert into public.user_showrooms (profile_id, showroom_id)
      values ('a0000000-0000-4000-8000-000000000006', '5a000000-0000-4000-8000-000000000002') $$,
@@ -172,13 +172,12 @@ select throws_ok(
   $$ insert into public.user_showrooms (profile_id, showroom_id)
      values ('a0000000-0000-4000-8000-000000000014', '5a000000-0000-4000-8000-000000000001') $$,
   '42501', null,
-  'assignments: a showroom-scoped users.edit cannot assign showrooms directly (Phase 6 RPC)');
+  'assignments: a showroom manager cannot claim a user it did not create');
 
 select set_config('request.jwt.claims', '{"sub":"a0000000-0000-4000-8000-000000000001","role":"authenticated"}', true);
 select lives_ok(
-  $$ insert into public.user_roles (profile_id, role_id, showroom_id)
-     select 'a0000000-0000-4000-8000-000000000014', r.id, '5a000000-0000-4000-8000-000000000003'
-       from public.roles r where r.code = 'VIEWER' $$,
+  $$ insert into public.user_roles (profile_id, role_id)
+     select 'a0000000-0000-4000-8000-000000000014', r.id from public.roles r where r.code = 'VIEWER' $$,
   'assignments: super admin assigns a role to another user');
 select throws_ok(
   $$ insert into public.user_roles (profile_id, role_id)

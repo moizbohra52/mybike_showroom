@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mybike_showroom/common/widgets/app_permission_widget.dart';
 import 'package:mybike_showroom/core/constants/module_keys.dart';
+import 'package:mybike_showroom/features/auth/application/session_controller.dart';
 
 void main() {
   group('AppPermissionWidget', () {
@@ -10,7 +12,9 @@ void main() {
       Set<String>? permissions,
       Widget? fallback,
     }) {
-      return MaterialApp(
+      return ProviderScope(
+        overrides: [currentPermissionsProvider.overrideWithValue(const <String>{})],
+        child: MaterialApp(
         home: Scaffold(
           body: AppPermissionWidget(
             permission: permission,
@@ -19,10 +23,11 @@ void main() {
             child: const Text('child'),
           ),
         ),
+      ),
       );
     }
 
-    testWidgets('shows child when permissions is null (permissive mode)', (
+    testWidgets('without an explicit set it fails closed (no session permissions)', (
       WidgetTester tester,
     ) async {
       await tester.pumpWidget(
@@ -30,7 +35,7 @@ void main() {
           permission: ModuleKeys.sales,
         ),
       );
-      expect(find.text('child'), findsOneWidget);
+      expect(find.text('child'), findsNothing);
     });
 
     testWidgets('shows child when permission is present in set', (

@@ -17,9 +17,25 @@ abstract final class ErrorMapper {
     'MB010': 'The accounting period does not match its financial year.',
     'MB011': 'Document numbering cannot be changed this way.',
     'MB020': 'System roles cannot be renamed, deactivated or deleted.',
-    'MB021': 'This permission cannot be granted to that role.',
+    'MB021': 'This permission cannot be changed for that role.',
     'MB022': 'Super Admin can only be assigned for all showrooms.',
   };
+
+  /// Runs [call] and converts every SDK error into an [AppFailure].
+  static Future<T> guard<T>(Future<T> Function() call) async {
+    try {
+      return await call();
+    } catch (error, stackTrace) {
+      throw map(error, stackTrace);
+    }
+  }
+
+  /// RLS turns a refused UPDATE / DELETE into "0 rows": report it as denied.
+  static void requireChanged(List<Object?> rows) {
+    if (rows.isEmpty) {
+      throw const PermissionFailure();
+    }
+  }
 
   static AppFailure map(Object error, [StackTrace? stackTrace]) {
     if (error is AppFailure) {
@@ -37,7 +53,27 @@ abstract final class ErrorMapper {
     if (error is PostgrestException) {
       return mapPostgrest(error, stackTrace);
     }
+    if (error is FunctionException) {
+      return mapFunction(error, stackTrace);
+    }
     return UnknownFailure(cause: error, stackTrace: stackTrace);
+  }
+
+  /// Edge Function errors. MyBike functions answer `{error: {code, message}}`
+  /// with messages written for the user; only 4xx messages are shown.
+  static AppFailure mapFunction(FunctionException error, [StackTrace? stackTrace]) {
+    final Object? details = error.details;
+    final Object? body = details is Map ? details['error'] : null;
+    final String? message = body is Map && body['message'] is String ? body['message'] as String : null;
+    return switch (error.status) {
+      400 || 422 => ValidationFailure(message: message ?? FailureMessages.validation, cause: error, stackTrace: stackTrace),
+      401 => AuthFailure(isSessionExpired: true, cause: error, stackTrace: stackTrace),
+      403 => PermissionFailure(cause: error, stackTrace: stackTrace),
+      404 => NotFoundFailure(cause: error, stackTrace: stackTrace),
+      409 => ConflictFailure(message: message ?? FailureMessages.duplicate, cause: error, stackTrace: stackTrace),
+      >= 500 => ServerFailure(statusCode: error.status, cause: error, stackTrace: stackTrace),
+      _ => UnknownFailure(cause: error, stackTrace: stackTrace),
+    };
   }
 
   static AppFailure mapAuth(AuthException error, [StackTrace? stackTrace]) {
@@ -76,6 +112,8 @@ abstract final class ErrorMapper {
       'PGRST301' || 'PGRST303' =>
         AuthFailure(isSessionExpired: true, cause: error, stackTrace: stackTrace),
       '23505' => ConflictFailure(cause: error, stackTrace: stackTrace),
+      // Foreign key RESTRICT / NO ACTION: the row is still referenced.
+      '23001' || '23503' => BusinessRuleFailure(message: FailureMessages.inUse, ruleCode: code, cause: error, stackTrace: stackTrace),
       '23514' || '23502' || '22P02' => ValidationFailure(cause: error, stackTrace: stackTrace),
       'PGRST116' => NotFoundFailure(cause: error, stackTrace: stackTrace),
       _ => UnknownFailure(cause: error, stackTrace: stackTrace),

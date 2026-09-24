@@ -31,9 +31,11 @@ abstract final class AppRoutes {
 
   static const String usersName = 'users';
   static const String usersPath = '/users';
+  static String userDetailPath(String id) => '$usersPath/$id';
 
   static const String rolesName = 'roles';
   static const String rolesPath = '/roles';
+  static String roleDetailPath(String id) => '$rolesPath/$id';
 
   static const String settingsName = 'settings';
   static const String settingsPath = '/settings';

@@ -8,6 +8,56 @@ part of 'session_controller.dart';
 
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // ignore_for_file: type=lint, type=warning
+/// Permissions in the current showroom context; empty unless signed in with a
+/// showroom (or ALL SHOWROOMS) selected. UI gating only — RLS decides.
+
+@ProviderFor(currentPermissions)
+final currentPermissionsProvider = CurrentPermissionsProvider._();
+
+/// Permissions in the current showroom context; empty unless signed in with a
+/// showroom (or ALL SHOWROOMS) selected. UI gating only — RLS decides.
+
+final class CurrentPermissionsProvider
+    extends $FunctionalProvider<Set<String>, Set<String>, Set<String>>
+    with $Provider<Set<String>> {
+  /// Permissions in the current showroom context; empty unless signed in with a
+  /// showroom (or ALL SHOWROOMS) selected. UI gating only — RLS decides.
+  CurrentPermissionsProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'currentPermissionsProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$currentPermissionsHash();
+
+  @$internal
+  @override
+  $ProviderElement<Set<String>> $createElement($ProviderPointer pointer) =>
+      $ProviderElement(pointer);
+
+  @override
+  Set<String> create(Ref ref) {
+    return currentPermissions(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(Set<String> value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<Set<String>>(value),
+    );
+  }
+}
+
+String _$currentPermissionsHash() =>
+    r'2cc534a84734af9c2c692d76eed5972582944833';
+
 /// Loads the session after sign-in / app start, keeps the showroom choice and
 /// clears everything on sign-out.
 

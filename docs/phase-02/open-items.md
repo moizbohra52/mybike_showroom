@@ -1,4 +1,4 @@
-# Phase 2 — open items (audit of 2026-09-23)
+| ovl-24 | **fixed in Phase 6** (reads the session permissions, fails closed) || ovl-01 | **fixed in Phase 6** (`show()` pops the root navigator the dialog lives on) || tests-31 | **fixed in Phase 6** (`show()` pops the root navigator the dialog lives on) || spec-09 | **fixed in Phase 6** (`show()` pops the root navigator the dialog lives on) || screens-11 | **fixed in Phase 6** (`isExpanded: true` + ellipsized label) || inputs-15 | **fixed in Phase 6** (`isExpanded: true` + ellipsized label) |# Phase 2 — open items (audit of 2026-09-23)
 
 Phase 2 (Common UI Design System) was **not closed**: Phase 3 was started on request with these items carried over.
 Source: a 6-auditor review of lib/common + tests against the Phase 2 exit criteria, the Definition of Done and ground rules G3/G5/G8,
@@ -6,6 +6,8 @@ with an independent verifier per auditor (the screens/layout verifier did not fi
 Refuted findings are omitted. Several rows describe the same root cause from different angles.
 
 **Totals (non-refuted):** 20 blocker · 63 major · 92 minor
+
+**Phase 6 (2026-09-24):** AppPermissionWidget now fails closed (ovl-24), AppConfirmDialog.show closes the dialog instead of the page (spec-09 / tests-31 / ovl-01), AppDropdown no longer overflows (inputs-15 / screens-11). The other rows are still open.
 
 ## Headline blockers
 

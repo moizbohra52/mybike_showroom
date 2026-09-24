@@ -57,4 +57,13 @@ void main() {
     expect(AppRouter.guard(signedIn(limited, selection: ind), AppRoutes.salesPath), AppRoutes.forbiddenPath);
     expect(AppRouter.guard(signedIn(limited, selection: ind), AppRoutes.dashboardPath), isNull);
   });
+
+  test('detail routes need the module view permission too', () {
+    final UserSession limited = testSession(
+      showrooms: <SessionShowroom>[testShowroom('s-ind', 'Indore', permissions: <String>{'dashboard.view', 'roles.view'})],
+    );
+    expect(AppRouter.guard(signedIn(limited, selection: ind), AppRoutes.userDetailPath('u1')), AppRoutes.forbiddenPath);
+    expect(AppRouter.guard(signedIn(limited, selection: ind), AppRoutes.roleDetailPath('r1')), isNull);
+    expect(AppRouter.guard(signedIn(limited, selection: ind), '/usersettings'), isNull, reason: 'prefix must end at a /');
+  });
 }

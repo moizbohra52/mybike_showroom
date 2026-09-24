@@ -47,12 +47,12 @@ class AppConfirmDialog extends StatelessWidget {
       actions: <Widget>[
         AppOutlinedButton(
           text: cancelLabel,
-          onPressed: () => Navigator.of(context).pop(false),
+          onPressed: () => Navigator.of(context, rootNavigator: true).pop(false),
         ),
         AppButton(
           text: confirmLabel,
           variant: isDestructive ? AppButtonVariant.danger : AppButtonVariant.primary,
-          onPressed: () => Navigator.of(context).pop(true),
+          onPressed: () => Navigator.of(context, rootNavigator: true).pop(true),
         ),
       ],
     );

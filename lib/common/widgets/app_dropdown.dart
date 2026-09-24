@@ -84,15 +84,20 @@ class AppDropdown<T> extends StatelessWidget {
                     Icon(item.icon, size: AppDimensions.iconSm, color: palette.textSecondary),
                     const SizedBox(width: AppDimensions.space8),
                   ],
-                  Text(
-                    item.label,
-                    style: AppTypography.bodyMedium.copyWith(color: palette.textPrimary),
+                  Flexible(
+                    child: Text(
+                      item.label,
+                      overflow: TextOverflow.ellipsis,
+                      style: AppTypography.bodyMedium.copyWith(color: palette.textPrimary),
+                    ),
                   ),
                 ],
               ),
             );
           }).toList(),
           onChanged: enabled ? onChanged : null,
+          // Fill the field and ellipsize long labels instead of overflowing.
+          isExpanded: true,
           dropdownColor: palette.surface,
           icon: Icon(Icons.arrow_drop_down, color: palette.textSecondary),
           style: AppTypography.bodyMedium.copyWith(color: palette.textPrimary),

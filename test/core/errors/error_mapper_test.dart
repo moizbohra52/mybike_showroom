@@ -50,4 +50,29 @@ void main() {
     expect(unknown.message, isNot(contains('select')));
     expect(unknown.traceCode, isNotNull);
   });
+
+  test('Edge Function errors map by status; only 4xx messages are shown', () {
+    Map<String, Object?> body(String message) => <String, Object?>{
+          'error': <String, Object?>{'code': 'x', 'message': message},
+        };
+    final AppFailure conflict = ErrorMapper.map(FunctionException(status: 409, details: body('Email already exists.')));
+    expect(conflict, isA<ConflictFailure>());
+    expect(conflict.message, 'Email already exists.');
+    expect(ErrorMapper.map(FunctionException(status: 400, details: body('Weak password.'))).message, 'Weak password.');
+    expect(ErrorMapper.map(const FunctionException(status: 403)), isA<PermissionFailure>());
+    expect((ErrorMapper.map(const FunctionException(status: 401)) as AuthFailure).isSessionExpired, isTrue);
+    final AppFailure server = ErrorMapper.map(FunctionException(status: 500, details: body('stack trace here')));
+    expect(server, isA<ServerFailure>());
+    expect(server.message, isNot(contains('stack')));
+  });
+
+  test('a referenced row (FK restrict) is explained as in use', () {
+    final AppFailure failure = ErrorMapper.map(const PostgrestException(message: 'raw', code: '23001'));
+    expect(failure.message, FailureMessages.inUse);
+  });
+
+  test('a delete that RLS filtered to nothing is a permission failure', () {
+    expect(() => ErrorMapper.requireChanged(const <Object?>[]), throwsA(isA<PermissionFailure>()));
+    ErrorMapper.requireChanged(const <Object?>[1]);
+  });
 }

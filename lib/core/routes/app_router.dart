@@ -15,6 +15,10 @@ import 'package:mybike_showroom/features/auth/presentation/access_blocked_screen
 import 'package:mybike_showroom/features/auth/presentation/login_screen.dart';
 import 'package:mybike_showroom/features/auth/presentation/select_showroom_screen.dart';
 import 'package:mybike_showroom/features/auth/presentation/splash_screen.dart';
+import 'package:mybike_showroom/features/roles/presentation/role_detail_screen.dart';
+import 'package:mybike_showroom/features/roles/presentation/roles_screen.dart';
+import 'package:mybike_showroom/features/users/presentation/user_detail_screen.dart';
+import 'package:mybike_showroom/features/users/presentation/users_screen.dart';
 
 /// Centralised `go_router` configuration.
 ///
@@ -29,6 +33,9 @@ abstract final class AppRouter {
     AppRoutes.loginPath,
     AppRoutes.accessBlockedPath,
   };
+
+  /// Modules with real screens; the rest show [ModulePlaceholderScreen].
+  static const Set<String> implementedModules = <String>{ModuleKeys.dashboard, ModuleKeys.users, ModuleKeys.roles};
 
   static GoRouter createRouter({
     required GoRouterRedirect redirect,
@@ -53,8 +60,30 @@ abstract final class AppRouter {
               name: AppRoutes.dashboardName,
               builder: (_, _) => const FoundationScreen(),
             ),
+            GoRoute(
+              path: AppRoutes.usersPath,
+              name: AppRoutes.usersName,
+              builder: (_, _) => const UsersScreen(),
+              routes: <RouteBase>[
+                GoRoute(
+                  path: ':id',
+                  builder: (_, GoRouterState state) => UserDetailScreen(profileId: state.pathParameters['id']!),
+                ),
+              ],
+            ),
+            GoRoute(
+              path: AppRoutes.rolesPath,
+              name: AppRoutes.rolesName,
+              builder: (_, _) => const RolesScreen(),
+              routes: <RouteBase>[
+                GoRoute(
+                  path: ':id',
+                  builder: (_, GoRouterState state) => RoleDetailScreen(roleId: state.pathParameters['id']!),
+                ),
+              ],
+            ),
             for (final NavigationEntry entry in NavigationRegistry.entries)
-              if (entry.moduleKey != ModuleKeys.dashboard)
+              if (!implementedModules.contains(entry.moduleKey))
                 GoRoute(
                   path: entry.path,
                   name: entry.moduleKey,

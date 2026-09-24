@@ -471,11 +471,11 @@ class _GalleryScreenState extends State<GalleryScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: <Widget>[
-                  // null permissions → permissive (Phase 2 default)
+                  // no permissions passed → the signed-in user's set (fails closed)
                   AppPermissionWidget(
-                    permission: ModuleKeys.sales,
+                    permission: PermissionKeys.view(ModuleKeys.sales),
                     child: AppButton(
-                      text: 'Visible (null permissions — permissive)',
+                      text: 'Visible (session has sales.view)',
                       onPressed: () {},
                     ),
                   ),

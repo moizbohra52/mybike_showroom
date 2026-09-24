@@ -157,7 +157,7 @@ Rules:
 
 | Function (planned) | Auth | Privilege | Notes |
 |--------------------|------|-----------|-------|
-| `admin-create-user` | JWT of Super/Admin + permission check | `service_role` (Auth admin API) | never accepts a role/showroom combination the caller cannot grant |
+| `admin-users` (Phase 6: `create`, `set_password`) | caller JWT verified with Auth; `users.create` in the showroom + `can_assign_role` (create) or `can_manage_user` (password), checked as the caller | `service_role` for the Auth admin API only; every database write uses the caller JWT (RLS) | never accepts a role/showroom combination the caller cannot grant; rolls the auth user back if RLS refuses |
 | `admin-set-password`, `admin-deactivate-user` | Super/Admin | `service_role` | audited; cannot target a Super Admin unless caller is Super Admin |
 | `send-notification` | DB webhook/`pg_net` with shared secret, or internal JWT | `service_role` + FCM credentials | validates the secret header; never an open client endpoint |
 | `scheduled-jobs` (low stock, aging, document expiry) | `pg_cron` + secret | `service_role` | idempotent per day |
