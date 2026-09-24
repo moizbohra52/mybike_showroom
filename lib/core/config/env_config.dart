@@ -126,7 +126,7 @@ class EnvConfig {
   final bool enableNetworkLogs;
 
   /// True when both Supabase values are present. Supabase is only *required*
-  /// from Phase 3/5 onward (database + auth); Phase 1 runs without it.
+  /// from Phase 5 onward (auth + data); validate() blocks startup without it.
   bool get isSupabaseConfigured =>
       supabaseUrl.isNotEmpty && supabaseAnonKey.isNotEmpty;
 
@@ -178,17 +178,19 @@ class EnvConfig {
       );
     }
 
+    // Sign-in and all data need Supabase (Phase 5 onward) in every environment.
     if (!isSupabaseConfigured) {
-      if (environment.isProduction) {
-        problems.add(
-          'SUPABASE_URL and SUPABASE_ANON_KEY are required for production builds.',
-        );
-      } else {
-        warnings.add(
-          'Supabase is not configured yet. Database, auth and storage phases '
-          '(3–5) require SUPABASE_URL and SUPABASE_ANON_KEY.',
-        );
-      }
+      problems.add(
+        'SUPABASE_URL and SUPABASE_ANON_KEY are required. Copy config/dev.example.json '
+        'to config/dev.json and run with --dart-define-from-file=config/dev.json.',
+      );
+    }
+
+    if (supabaseUrl.contains('<') || supabaseAnonKey.contains('<')) {
+      problems.add(
+        'The Supabase configuration still contains template placeholders (<...>). '
+        'Fill in the real project URL and anon/publishable key.',
+      );
     }
 
     if (environment.isProduction && enableNetworkLogs) {

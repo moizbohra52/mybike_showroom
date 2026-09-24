@@ -40,9 +40,19 @@ The project is built **one phase at a time**; each phase ends with a structured 
 (implemented / files / dependencies / DB / security / tests / checklist / expected result / known issues)
 and then stops until `NEXT PHASE` or `CONTINUE` is given.
 
-Current status: **Phase 0 (Requirements & Architecture) complete** — Phase 1 not started.
+Current status: Phases 0–1 complete · Phase 2 in progress ([open items](docs/phase-02/open-items.md)) · Phase 3 implemented ([database](docs/phase-03/README.md)) · Phase 4 implemented ([security](docs/phase-04/README.md)) · Phase 5 implemented ([authentication](docs/phase-05/README.md)).
 
-## Getting started (after Phase 1)
+## Database (Supabase)
+
+```powershell
+supabase login
+supabase link --project-ref <dev-project-ref>
+supabase db push            # migrations only — never --include-seed outside dev
+supabase db reset           # local stack (Docker): migrations + supabase/seed.sql demo data
+supabase test db            # pgTAP tests in supabase/tests/database
+```
+
+## Getting started
 
 ```powershell
 flutter pub get

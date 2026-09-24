@@ -46,15 +46,24 @@ void main() {
   });
 
   group('EnvConfig.validate (development)', () {
-    test('missing Supabase is a warning, not a blocker', () {
+    test('missing Supabase blocks startup (required from Phase 5)', () {
       final EnvValidation validation = const EnvConfig(
         environment: AppEnvironment.dev,
       ).validate();
 
-      expect(validation.isValid, isTrue);
-      expect(validation.hasWarnings, isTrue);
-      expect(validation.warnings.join(' '), contains('SUPABASE_URL'));
-      expect(validation.problems, isEmpty);
+      expect(validation.isValid, isFalse);
+      expect(validation.problems.join(' '), contains('SUPABASE_URL'));
+    });
+
+    test('unfilled template placeholders block startup', () {
+      final EnvValidation validation = const EnvConfig(
+        environment: AppEnvironment.dev,
+        supabaseUrl: 'https://<dev-project-ref>.supabase.co',
+        supabaseAnonKey: '<anon-or-publishable-key>',
+      ).validate();
+
+      expect(validation.isValid, isFalse);
+      expect(validation.problems.join(' '), contains('placeholders'));
     });
 
     test('half-configured Supabase blocks startup', () {
@@ -119,7 +128,7 @@ void main() {
       expect(validation.isValid, isFalse);
       expect(
         validation.problems.join(' '),
-        contains('required for production'),
+        contains('are required'),
       );
     });
 

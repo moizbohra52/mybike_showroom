@@ -2,18 +2,21 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mybike_showroom/common/layouts/breakpoint.dart';
+import 'package:mybike_showroom/core/constants/app_strings.dart';
+import 'package:mybike_showroom/core/routes/app_routes.dart';
 import 'package:mybike_showroom/core/routes/navigation_registry.dart';
 import 'package:mybike_showroom/core/theme/app_dimensions.dart';
 import 'package:mybike_showroom/core/theme/app_palette.dart';
 import 'package:mybike_showroom/core/theme/app_theme_mode.dart';
 import 'package:mybike_showroom/core/theme/theme_controller.dart';
+import 'package:mybike_showroom/features/auth/application/session_controller.dart';
 
 /// Responsive navigation shell wrapping every module route.
 ///
 /// Reads the current [Breakpoint] to render desktop (sidebar + header),
 /// tablet (navigation rail + header) or mobile (bottom navigation) layouts.
-/// Phase 1 sees all entries; Phase 5 supplies a real permission set that
-/// narrows [NavigationRegistry.visibleFor].
+/// Destinations are filtered by the `module.view` permissions of the current
+/// showroom — convenience only; RLS enforces access to the data.
 class AppScaffold extends ConsumerWidget {
   const AppScaffold({
     required this.child,
@@ -26,29 +29,33 @@ class AppScaffold extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final SessionState? session = ref.watch(sessionControllerProvider).value;
+    final Set<String> permissions = session is SignedIn ? session.permissions : const <String>{};
     final Breakpoint breakpoint = context.breakpoint;
 
     if (breakpoint.usesSidebar) {
-      return DesktopShell(currentPath: currentPath, child: child);
+      return DesktopShell(currentPath: currentPath, permissions: permissions, child: child);
     }
     if (breakpoint.isMedium) {
-      return TabletShell(currentPath: currentPath, child: child);
+      return TabletShell(currentPath: currentPath, permissions: permissions, child: child);
     }
-    return MobileShell(currentPath: currentPath, child: child);
+    return MobileShell(currentPath: currentPath, permissions: permissions, child: child);
   }
 }
 
-// ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ Desktop shell ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬
+// ── Desktop shell ────────────────────────────────────────────────────────────
 
 class DesktopShell extends StatelessWidget {
   const DesktopShell({
     required this.child,
     required this.currentPath,
+    required this.permissions,
     super.key,
   });
 
   final Widget child;
   final String currentPath;
+  final Set<String> permissions;
 
   @override
   Widget build(BuildContext context) {
@@ -57,9 +64,8 @@ class DesktopShell extends StatelessWidget {
     return Scaffold(
       body: Row(
         children: <Widget>[
-          // Sidebar â€” Material is the ink ancestor so ListTile splash/
-          // selected backgrounds render instead of being hidden by a
-          // DecoratedBox.
+          // Material is the ink ancestor so ListTile splash/selected
+          // backgrounds render instead of being hidden by a DecoratedBox.
           Material(
             color: palette.sidebarBackground,
             child: Container(
@@ -91,7 +97,7 @@ class DesktopShell extends StatelessWidget {
                       ),
                       children: <Widget>[
                         for (final NavigationEntry entry
-                            in NavigationRegistry.sidebarEntries)
+                            in NavigationRegistry.visibleFor(permissions))
                           _SidebarTile(
                             entry: entry,
                             selected: entry.path == currentPath,
@@ -114,7 +120,6 @@ class DesktopShell extends StatelessWidget {
               ),
             ),
           ),
-          // Main content
           Expanded(
             child: Column(
               children: <Widget>[
@@ -127,12 +132,20 @@ class DesktopShell extends StatelessWidget {
                     color: palette.headerBackground,
                     border: Border(bottom: BorderSide(color: palette.border)),
                   ),
-                  alignment: Alignment.centerLeft,
-                  child: Text(
-                    NavigationRegistry.labelForPath(currentPath),
-                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      color: palette.textPrimary,
-                    ),
+                  child: Row(
+                    children: <Widget>[
+                      Expanded(
+                        child: Text(
+                          NavigationRegistry.labelForPath(currentPath),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                            color: palette.textPrimary,
+                          ),
+                        ),
+                      ),
+                      const ShellSessionActions(),
+                    ],
                   ),
                 ),
                 Expanded(
@@ -150,22 +163,24 @@ class DesktopShell extends StatelessWidget {
   }
 }
 
-// ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ Tablet shell ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬
+// ── Tablet shell ─────────────────────────────────────────────────────────────
 
 class TabletShell extends StatelessWidget {
   const TabletShell({
     required this.child,
     required this.currentPath,
+    required this.permissions,
     super.key,
   });
 
   final Widget child;
   final String currentPath;
+  final Set<String> permissions;
 
   @override
   Widget build(BuildContext context) {
     final AppPalette palette = AppPalette.of(context);
-    const List<NavigationEntry> entries = NavigationRegistry.sidebarEntries;
+    final List<NavigationEntry> entries = NavigationRegistry.visibleFor(permissions);
     final int selectedIndex = entries.indexWhere(
       (NavigationEntry e) => e.path == currentPath,
     );
@@ -173,29 +188,30 @@ class TabletShell extends StatelessWidget {
     return Scaffold(
       body: Row(
         children: <Widget>[
-          NavigationRail(
-            selectedIndex: selectedIndex < 0 ? 0 : selectedIndex,
-            onDestinationSelected: (int index) {
-              context.go(entries[index.clamp(0, entries.length - 1)].path);
-            },
-            indicatorColor: palette.navItemSelectedBackground,
-            selectedIconTheme: IconThemeData(
-              color: palette.onBrandPrimary,
-              size: AppDimensions.icon,
+          if (entries.length >= 2)
+            NavigationRail(
+              selectedIndex: selectedIndex < 0 ? 0 : selectedIndex,
+              onDestinationSelected: (int index) {
+                context.go(entries[index.clamp(0, entries.length - 1)].path);
+              },
+              indicatorColor: palette.navItemSelectedBackground,
+              selectedIconTheme: IconThemeData(
+                color: palette.onBrandPrimary,
+                size: AppDimensions.icon,
+              ),
+              unselectedIconTheme: IconThemeData(
+                color: palette.navItemForeground,
+                size: AppDimensions.iconMd,
+              ),
+              destinations: <NavigationRailDestination>[
+                for (final NavigationEntry entry in entries)
+                  NavigationRailDestination(
+                    icon: Icon(entry.icon),
+                    selectedIcon: Icon(entry.effectiveSelectedIcon),
+                    label: Text(entry.label),
+                  ),
+              ],
             ),
-            unselectedIconTheme: IconThemeData(
-              color: palette.navItemForeground,
-              size: AppDimensions.iconMd,
-            ),
-            destinations: <NavigationRailDestination>[
-              for (final NavigationEntry entry in entries)
-                NavigationRailDestination(
-                  icon: Icon(entry.icon),
-                  selectedIcon: Icon(entry.effectiveSelectedIcon),
-                  label: Text(entry.label),
-                ),
-            ],
-          ),
           Expanded(
             child: Column(
               children: <Widget>[
@@ -204,10 +220,18 @@ class TabletShell extends StatelessWidget {
                   padding: const EdgeInsets.symmetric(
                     horizontal: AppDimensions.space20,
                   ),
-                  alignment: Alignment.centerLeft,
-                  child: Text(
-                    NavigationRegistry.labelForPath(currentPath),
-                    style: Theme.of(context).textTheme.titleLarge,
+                  child: Row(
+                    children: <Widget>[
+                      Expanded(
+                        child: Text(
+                          NavigationRegistry.labelForPath(currentPath),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: Theme.of(context).textTheme.titleLarge,
+                        ),
+                      ),
+                      const ShellSessionActions(),
+                    ],
                   ),
                 ),
                 Expanded(child: child),
@@ -220,48 +244,113 @@ class TabletShell extends StatelessWidget {
   }
 }
 
-// ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ Mobile shell ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¯Ã‚Â¿Ã‚Â½ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬
+// ── Mobile shell ─────────────────────────────────────────────────────────────
 
-class MobileShell extends ConsumerWidget {
+class MobileShell extends StatelessWidget {
   const MobileShell({
     required this.child,
     required this.currentPath,
+    required this.permissions,
     super.key,
   });
 
   final Widget child;
   final String currentPath;
+  final Set<String> permissions;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final List<NavigationEntry> primary = NavigationRegistry.mobilePrimary(
-      null,
-    );
+  Widget build(BuildContext context) {
+    final List<NavigationEntry> primary = NavigationRegistry.mobilePrimary(permissions);
     final int selectedIndex = primary.indexWhere(
       (NavigationEntry e) => e.path == currentPath,
     );
 
     return Scaffold(
-      body: child,
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: selectedIndex < 0 ? 0 : selectedIndex,
-        onDestinationSelected: (int index) {
-          context.go(primary[index].path);
-        },
-        destinations: <NavigationDestination>[
-          for (final NavigationEntry entry in primary)
-            NavigationDestination(
-              icon: Icon(entry.icon),
-              selectedIcon: Icon(entry.effectiveSelectedIcon),
-              label: entry.label,
+      body: Column(
+        children: <Widget>[
+          SafeArea(
+            bottom: false,
+            child: SizedBox(
+              height: AppDimensions.headerHeightCompact,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: AppDimensions.space12),
+                child: Row(
+                  children: <Widget>[
+                    Expanded(
+                      child: Text(
+                        NavigationRegistry.labelForPath(currentPath),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: Theme.of(context).textTheme.titleMedium,
+                      ),
+                    ),
+                    const ShellSessionActions(),
+                  ],
+                ),
+              ),
             ),
+          ),
+          Expanded(child: child),
         ],
       ),
+      // NavigationBar needs at least two destinations.
+      bottomNavigationBar: primary.length < 2
+          ? null
+          : NavigationBar(
+              selectedIndex: selectedIndex < 0 ? 0 : selectedIndex,
+              onDestinationSelected: (int index) {
+                context.go(primary[index].path);
+              },
+              destinations: <NavigationDestination>[
+                for (final NavigationEntry entry in primary)
+                  NavigationDestination(
+                    icon: Icon(entry.icon),
+                    selectedIcon: Icon(entry.effectiveSelectedIcon),
+                    label: entry.label,
+                  ),
+              ],
+            ),
     );
   }
 }
 
-// ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ Shared sub-widgets ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬
+// ── Shared sub-widgets ───────────────────────────────────────────────────────
+
+/// Current showroom (tap to switch when there is a choice) and sign-out.
+class ShellSessionActions extends ConsumerWidget {
+  const ShellSessionActions({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final SessionState? state = ref.watch(sessionControllerProvider).value;
+    if (state is! SignedIn || state.session == null) {
+      return const SizedBox.shrink();
+    }
+    final bool canSwitch = state.session!.showrooms.length > 1 || state.session!.canViewAllShowrooms;
+    final String label = state.selection?.isAll ?? false
+        ? AppStrings.allShowrooms
+        : state.showroom?.name ?? '';
+
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: <Widget>[
+        ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 220),
+          child: TextButton.icon(
+            onPressed: canSwitch ? () => context.go(AppRoutes.selectShowroomPath) : null,
+            icon: const Icon(Icons.storefront_outlined, size: AppDimensions.iconMd),
+            label: Text(label, maxLines: 1, overflow: TextOverflow.ellipsis),
+          ),
+        ),
+        IconButton(
+          tooltip: AppStrings.signOut,
+          icon: const Icon(Icons.logout),
+          onPressed: () => ref.read(sessionControllerProvider.notifier).signOut(),
+        ),
+      ],
+    );
+  }
+}
 
 class _SidebarTile extends StatelessWidget {
   const _SidebarTile({

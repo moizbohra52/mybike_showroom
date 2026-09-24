@@ -9,15 +9,14 @@ import 'package:mybike_showroom/core/storage/preference_store.dart';
 import 'package:mybike_showroom/core/theme/app_theme.dart';
 import 'package:mybike_showroom/core/theme/app_theme_mode.dart';
 import 'package:mybike_showroom/core/theme/theme_controller.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
-/// Phase 1 entry point.
+/// Entry point.
 ///
-/// Bootstraps (1) device-local preferences, (2) the persisted theme mode and
-/// (3) the go_router configuration, then launches the app inside a
-/// [ProviderScope] so every feature module can read / write state.
-///
-/// Phase 3 adds `Supabase.initialize()` before `runApp()`; Phase 5 adds the
-/// auth / session bootstrap.  Neither belongs here yet.
+/// Bootstraps (1) device-local preferences and the persisted theme mode,
+/// (2) validates the build configuration, (3) initialises Supabase (the SDK
+/// restores and refreshes the stored session), then launches the app inside a
+/// [ProviderScope]. The session controller + router guard take it from there.
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
@@ -36,6 +35,13 @@ Future<void> main() async {
     return;
   }
 
+  // Only the anon/publishable key ever reaches the client (G4); validate()
+  // refuses service-role / secret keys.
+  await Supabase.initialize(
+    url: EnvConfig.current.supabaseUrl,
+    publishableKey: EnvConfig.current.supabaseAnonKey,
+  );
+
   // ── 3. Launch ───────────────────────────────────────────────────────────
   runApp(
     ProviderScope(
@@ -50,7 +56,7 @@ Future<void> main() async {
   );
 }
 
-/// Root widget — theme + router only.
+/// Root widget — theme + guarded router.
 class MyApp extends ConsumerWidget {
   const MyApp({super.key});
 
@@ -63,7 +69,7 @@ class MyApp extends ConsumerWidget {
       theme: AppTheme.light,
       darkTheme: AppTheme.dark,
       themeMode: themeMode.materialThemeMode,
-      routerConfig: AppRouter.routerConfig,
+      routerConfig: ref.watch(routerProvider),
       debugShowCheckedModeBanner: false,
       restorationScopeId: 'mybike',
     );

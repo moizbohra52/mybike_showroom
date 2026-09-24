@@ -67,11 +67,14 @@ class AppButton extends StatelessWidget {
           Icon(icon, size: iconSize, color: fgColor),
           const SizedBox(width: AppDimensions.space8),
         ],
-        Text(
-          text,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          style: textStyle.copyWith(color: fgColor),
+        Flexible(
+          child: Text(
+            text,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            softWrap: false,
+            style: textStyle.copyWith(color: fgColor),
+          ),
         ),
         if (!loading && trailingIcon != null) ...<Widget>[
           const SizedBox(width: AppDimensions.space8),

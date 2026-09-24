@@ -35,8 +35,11 @@ create extension if not exists pg_cron;      -- scheduled jobs (Supabase: via da
 create extension if not exists pg_net;       -- DB → Edge Function webhooks (notifications)
 ```
 
+Phase 3 creates only `pgcrypto`, `citext` and `pg_trgm`, `with schema extensions`. The others are added by the
+phase that first uses them.
+
 Shared triggers/functions created in Phase 3:
-`set_updated_at()`, `set_created_by()`, `fn_audit_row()` (Phase 20),
+`set_updated_at()`, `set_created_by()`, `fn_set_granted_by()`; later: `fn_audit_row()` (Phase 20),
 `fn_assert_active_period(date)`, `fn_assert_journal_balanced()` (Phase 12).
 
 ## 3. Enum catalogue
@@ -77,27 +80,27 @@ Shared triggers/functions created in Phase 3:
 
 | Table | Key columns | Constraints / indexes |
 |-------|-------------|----------------------|
-| `profiles` | `id = auth.users.id` PK, `employee_code`, `full_name`, `email citext`, `phone`, `designation`, `avatar_path`, `status user_status`, `is_active bool`, `default_showroom_id`, `last_login_at` | unique `email`, unique `employee_code` (nullable), index `(is_active)`, FK `default_showroom_id → showrooms` |
+| `profiles` | `id = auth.users.id` PK, `employee_code`, `full_name`, `email citext`, `phone`, `designation`, `avatar_path`, `status user_status`, `is_active bool` **generated** (`status = 'active'`), `last_login_at` | unique `email`, unique `employee_code` (nullable), index `(is_active)`, trigram `full_name`; no `default_showroom_id` (default = `user_showrooms.is_default`) |
 | `roles` | `id`, `code`, `name`, `description`, `is_system bool`, `precedence int`, `is_active` | unique `code`; system roles not deletable |
 | `permissions` | `id`, `module`, `action`, `code` (`module.action`), `description` | unique `code`, unique `(module, action)` |
 | `role_permissions` | `role_id`, `permission_id` | PK `(role_id, permission_id)`, FKs cascade |
-| `user_roles` | `id`, `profile_id`, `role_id`, `showroom_id` (nullable = global), `granted_by`, `granted_at`, `expires_on` | unique `(profile_id, role_id, showroom_id)` (nullable-safe via `coalesce` unique index), index `(profile_id)` |
-| `user_showrooms` | `id`, `profile_id`, `showroom_id`, `is_default bool`, `granted_by`, `granted_at` | unique `(profile_id, showroom_id)`, index `(showroom_id)` |
-| `auth_events` | `id`, `profile_id`, `event` (`login`, `logout`, `failed_login`, `password_reset`), `platform`, `app_version`, `ip`, `created_at` | index `(profile_id, created_at desc)`; append-only |
+| `user_roles` | `id`, `profile_id`, `role_id`, `showroom_id` (nullable = global), `granted_by`, `granted_at`, `expires_on` | unique nulls not distinct `(profile_id, role_id, showroom_id)`; `SUPER_ADMIN` only global (trigger) |
+| `user_showrooms` | `id`, `profile_id`, `showroom_id`, `is_default bool`, `is_active bool`, `granted_by`, `granted_at` | unique `(profile_id, showroom_id)`, at most **one default** per profile (partial unique index), `CHECK (not is_default or is_active)`, index `(showroom_id)` |
+| `auth_events` *(deferred from Phase 3 to a later phase)* | `id`, `profile_id`, `event` (`login`, `logout`, `failed_login`, `password_reset`), `platform`, `app_version`, `ip`, `created_at` | index `(profile_id, created_at desc)`; append-only |
 
 ### 4.2 Showrooms, financial years, settings (Phase 3, 7, 14)
 
 | Table | Key columns | Constraints / indexes |
 |-------|-------------|----------------------|
-| `showrooms` | `id`, `code citext`, `name`, `legal_name`, `gstin`, `pan`, `address_line1/2`, `city`, `state_code`, `pincode`, `phone`, `email`, `invoice_prefix`, `fy_start_month smallint default 4`, `logo_path`, `opened_on`, `is_active` | unique `code`, unique `gstin` (where not null), index `(is_active)` |
+| `showrooms` | `id`, `code` (upper case), `name`, `legal_name`, `gstin`, `pan`, `address_line1/2`, `city`, `state_code → states(code)`, `pincode`, `phone`, `email citext`, `invoice_prefix` (2–3 chars), `logo_path`, `opened_on`, `is_active` (no `fy_start_month`: FY fixed April–March) | unique `code`, **unique `invoice_prefix`**; `gstin` **not unique** (showrooms in one state share the company GSTIN), GSTIN/PAN/state consistency CHECKs; index `(is_active)`, `(state_code)`, partial `(gstin)` |
 | `showroom_settings` | `showroom_id` PK/FK, `gst_enabled`, `default_gst_rate`, `default_place_of_supply_state`, `post_cogs_on_sale`, `valuation_method` (`specific_id`\|`weighted_avg`), `allow_negative_stock`, `low_stock_threshold`, `booking_min_amount`, `booking_validity_days`, `discount_approval_threshold`, `round_off_enabled`, `invoice_terms`, `invoice_footer`, `receipt_terms` | 1:1 with showroom |
 | `bank_accounts` | `id`, `showroom_id`, `account_name`, `bank_name`, `account_number`, `ifsc`, `branch`, `upi_id`, `opening_balance numeric(16,2)`, `current_balance numeric(16,2)`, `gl_account_id → accounts`, `is_active` | index `(showroom_id, is_active)`; balance maintained only by posting functions |
 | `cash_accounts` | `id`, `showroom_id`, `name` (`Main Counter`, `Service Counter`), `gl_account_id`, `opening_balance`, `current_balance`, `is_active`, `assigned_to` | unique `(showroom_id, name)` |
-| `financial_years` | `id`, `code` (`2026-27`), `start_date`, `end_date`, `is_active`, `is_closed`, `closed_by`, `closed_at` | unique `code`, unique `(start_date, end_date)`, `CHECK (end_date > start_date)` |
-| `accounting_periods` | `id`, `financial_year_id`, `start_date`, `end_date`, `status accounting_period_status`, `locked_by`, `locked_at` | unique `(financial_year_id, start_date)`; posting functions reject non-open periods |
-| `document_sequences` | `id`, `showroom_id`, `doc_type`, `financial_year_id`, `prefix`, `next_number bigint`, `padding smallint`, `suffix`, `reset_policy` | unique `(showroom_id, doc_type, financial_year_id)`; written only by `rpc_next_document_number()` |
+| `financial_years` | `id`, `code` (`2026-27`), `start_date`, `end_date`, `is_active`, `is_closed`, `closed_by`, `closed_at` | unique `code`, unique `start_date`, `CHECK` 1 April → 31 March and `code = fn_fy_code(start_date)` |
+| `accounting_periods` | `id`, `financial_year_id`, `period_no` (1 = April), `start_date`, `end_date`, `status accounting_period_status`, `locked_by`, `locked_at` | unique `(financial_year_id, period_no)`, `(financial_year_id, start_date)`; whole-month CHECK + guard trigger; posting functions reject non-open periods |
+| `document_sequences` | `id`, `showroom_id`, `doc_type`, `financial_year_id`, `prefix`, `next_number bigint`, `padding smallint`, `suffix` (no `reset_policy`: rows are per FY) | unique `(showroom_id, doc_type, financial_year_id)`, unique `(financial_year_id, doc_type, prefix, suffix)` across showrooms, GST length ≤ 16 CHECK; written only by `fn_ensure_document_sequences()` / `fn_next_document_number()` |
 | `settings` | `id`, `key` unique, `value jsonb`, `value_type`, `scope` (`company`), `is_client_readable bool`, `description`, `updated_by` | client reads only `is_client_readable = true` rows (e.g. theme defaults) |
-| `app_error_log` | `id`, `trace_code`, `profile_id`, `showroom_id`, `module`, `error_code`, `message`, `platform`, `app_version`, `git_sha`, `payload jsonb`, `created_at` | Super Admin read-only; retention job |
+| `app_error_log` *(deferred from Phase 3 to a later phase)* | `id`, `trace_code`, `profile_id`, `showroom_id`, `module`, `error_code`, `message`, `platform`, `app_version`, `git_sha`, `payload jsonb`, `created_at` | Super Admin read-only; retention job |
 
 ### 4.3 Vehicle / item masters (Phase 8)
 
@@ -110,7 +113,7 @@ Shared triggers/functions created in Phase 3:
 | `hsn_sac_codes` | `id`, `code`, `description`, `kind` (`goods`,`service`), `default_gst_rate`, `is_active` | unique `code` |
 | `tax_rates` | `id`, `name`, `rate_percent numeric(6,3)`, `applies_to` (`goods`,`service`,`all`), `effective_from`, `is_active` | unique `(name, effective_from)` |
 | `item_batches` *(reserved for future batch/IMEI tracking)* | `id`, `item_id`, `showroom_id`, `batch_no`, `expiry_date`, `qty` | unique `(item_id, showroom_id, batch_no)` — created only if the business requires it |
-| `states` | `id`, `code` (GST state code), `name`, `is_union_territory`, `is_active` | unique `code` — used for place-of-supply / IGST decisions |
+| `states` *(created in Phase 3: `showrooms.state_code` references it)* | `id`, `code` (GST state code), `name`, `is_union_territory`, `is_active` | unique `code` — used for place-of-supply / IGST decisions |
 
 ### 4.4 Inventory & stock (Phase 9)
 
@@ -249,7 +252,7 @@ the view**. A `security_definer` view would bypass RLS and leak other showrooms 
 
 | RPC | Responsibility |
 |-----|----------------|
-| `rpc_next_document_number(showroom, doc_type, fy)` | atomic sequence increment → formatted document number |
+| `fn_next_document_number(showroom, doc_type, doc_date)` *(Phase 3; internal, **not** client-callable — called inside the posting RPCs below)* | atomic sequence increment → formatted document number |
 | `rpc_receive_purchase_order(po, items jsonb, …)` | GRN + vehicle/item instances + `stock_ledger` + GRNI accrual entry |
 | `rpc_post_purchase_invoice(payload jsonb)` | validates items/GST, posts invoice, inventory + input-tax + payable journal, links GRN |
 | `rpc_create_sale(payload jsonb)` | validate vehicle availability/price → reserve → invoice → stock issue → COGS → sales+tax journal (one transaction) |
@@ -276,7 +279,7 @@ parameters, `RAISE EXCEPTION` with a stable SQLSTATE + friendly message (mapped 
 | Trigger | Tables | Behaviour |
 |---------|--------|-----------|
 | `trg_set_updated_at` | all tables with `updated_at` | `updated_at = now()` |
-| `trg_set_created_by` | operational tables | defaults `created_by`/`updated_by` from `current_profile_id()` |
+| `trg_set_created_by` | operational tables | sets `created_by`/`updated_by` from `auth.uid()` (= `profiles.id`), ignores client values, keeps `created_*` immutable |
 | `trg_vehicle_status_history` | `vehicles` | inserts a history row on status change |
 | `trg_assert_journal_balanced` | `journal_entry_lines` | deferred constraint trigger: header totals must match lines and balance |
 | `trg_journal_immutable` | `journal_entries`, `journal_entry_lines` | blocks UPDATE/DELETE when posted; only `draft → posted` allowed |
@@ -291,32 +294,36 @@ parameters, `RAISE EXCEPTION` with a stable SQLSTATE + friendly message (mapped 
 ## 6. Migration plan (Supabase CLI, timestamp-prefixed, ordered)
 
 Location: `supabase/migrations/`. One migration set per phase; a migration that has reached a shared
-environment is never edited — corrections arrive as new migrations.
+environment is never edited — corrections arrive as new migrations. File names are timestamp-prefixed
+(`YYYYMMDDHHMMSS_<name>.sql`); the CLI applies them in timestamp order and `supabase db push` refuses a
+migration older than the last applied one, so `<ts>` below is assigned when the file is written.
 
-| File (planned) | Phase | Contents |
-|----------------|-------|----------|
-| `0001_extensions_and_helpers.sql` | 3 | extensions, `set_updated_at()`, `set_created_by()`, `current_profile_id()`, enum types |
-| `0002_showrooms_and_settings.sql` | 3 | `showrooms`, `showroom_settings`, `settings`, `financial_years`, `accounting_periods`, `document_sequences` |
-| `0003_identity_and_rbac.sql` | 3 | `profiles`, `roles`, `permissions`, `role_permissions`, `user_roles`, `user_showrooms`, auth trigger |
-| `0004_rbac_functions.sql` | 4 | `is_active_user()`, `is_super_admin()`, `has_permission()`, `has_permission_for()`, `can_access_showroom()`, `accessible_showroom_ids()` |
-| `0005_rls_core.sql` | 4 | RLS enable/force + policies for every table created so far |
-| `0006_storage_buckets_and_policies.sql` | 4 | buckets + storage policies |
-| `0007_seed_reference_data.sql` | 3/4 | permissions, roles, role_permissions, account groups, CoA, categories, HSN defaults, states |
-| `0008_users_module.sql` | 6 | user/role views + RPCs (`rpc_assign_user_role`, `rpc_set_user_showrooms`) |
-| `0009_vehicle_master.sql` | 8 | brands/models/variants/items/tax tables + RLS |
-| `0010_inventory.sql` | 9 | vehicles, status history, reservations, item_stock, stock_ledger, adjustments, transfers + triggers + RLS |
-| `0011_parties.sql` | 10/11 | customers, addresses, suppliers, financiers, links + RLS |
-| `0012_purchase.sql` | 10 | PO, GRN, purchase invoices/returns + RPCs + RLS |
-| `0013_sales.sql` | 11 | quotations, bookings, sales orders, invoices, charges, delivery notes, returns + RPCs + RLS |
-| `0014_accounting_core.sql` | 12 | account_groups, accounts, journal entries/lines, opening balances + triggers + RLS |
-| `0015_finance.sql` | 13 | payments, allocations, contra, credit/debit notes, expenses, income + RPCs + RLS |
-| `0016_gst_and_reports.sql` | 14/16 | GST views, report views, `rpc_dashboard_kpis` |
-| `0017_documents.sql` | 19 | documents, reminders + RLS |
-| `0018_notifications.sql` | 18 | notifications, device_tokens, preferences + realtime publication |
-| `0019_audit.sql` | 20 | audit_logs + `fn_audit_row()` attached to audited tables |
-| `0020_approvals.sql` | 21 | approval rules/requests/steps + engine RPCs |
-| `0021_performance.sql` | 23 | extra indexes, materialised views, `pg_cron` jobs |
-| `0022_hardening.sql` | 24 | RLS/privilege fixes discovered by the security audit |
+> **As built:** Phase 3 deviations from this plan (renumbering, columns, constraints, deferred seeds) are
+> listed in [`docs/phase-03/README.md` §7](../phase-03/README.md#7-deviations-from-the-phase-0-plan).
+
+| # | File | Phase | Contents |
+|---|------|-------|----------|
+| 0001 | `20260923000001_extensions_and_helpers.sql` | 3 | extensions (schema `extensions`), enum types, `set_updated_at()`, `set_created_by()`, `fn_set_granted_by()`, IST / FY date helpers |
+| 0002 | `20260923000002_showrooms_and_settings.sql` | 3 | `states`, `showrooms`, `showroom_settings`, `settings`, `financial_years`, `accounting_periods`, `document_sequences`, numbering + FY functions, showroom bootstrap trigger |
+| 0003 | `20260923000003_identity_and_rbac.sql` | 3 | `profiles`, `roles`, `permissions`, `role_permissions`, `user_roles`, `user_showrooms`, auth triggers, `current_profile_id()` |
+| 0004 | `20260923000004_seed_reference_data.sql` | 3 | **seed reference data**: states, permissions, 11 system roles, role_permissions matrix, company settings, current FY + periods |
+| 0005 | `<ts>_rbac_functions_and_rls_core.sql` | 4 | `is_active_user()`, `is_super_admin()`, `has_permission()`, `has_permission_for()`, `can_access_showroom()`, `accessible_showroom_ids()` + RLS policies for every table created so far (FORCE decided here) |
+| 0006 | `<ts>_storage_buckets_and_policies.sql` | 4 | buckets + storage policies |
+| — | `<ts>_users_module.sql` | 6 | user/role views + RPCs (`rpc_assign_user_role`, `rpc_set_user_showrooms`) |
+| — | `<ts>_vehicle_master.sql` | 8 | brands/models/variants/items/tax tables + RLS + HSN/SAC seeds |
+| — | `<ts>_inventory.sql` | 9 | vehicles, status history, reservations, item_stock, stock_ledger, adjustments, transfers + triggers + RLS |
+| — | `<ts>_parties.sql` | 10/11 | customers, addresses, suppliers, financiers, links + RLS |
+| — | `<ts>_purchase.sql` | 10 | PO, GRN, purchase invoices/returns + RPCs + RLS |
+| — | `<ts>_sales.sql` | 11 | quotations, bookings, sales orders, invoices, charges, delivery notes, returns + RPCs + RLS |
+| — | `<ts>_accounting_core.sql` | 12 | account_groups, accounts, journal entries/lines, opening balances + triggers + RLS + CoA seeds |
+| — | `<ts>_finance.sql` | 13 | payments, allocations, contra, credit/debit notes, expenses, income + RPCs + RLS + category seeds |
+| — | `<ts>_gst_and_reports.sql` | 14/16 | GST views, report views, `rpc_dashboard_kpis` |
+| — | `<ts>_documents.sql` | 19 | documents, reminders + RLS |
+| — | `<ts>_notifications.sql` | 18 | notifications, device_tokens, preferences + realtime publication |
+| — | `<ts>_audit.sql` | 20 | audit_logs + `fn_audit_row()` attached to audited tables |
+| — | `<ts>_approvals.sql` | 21 | approval rules/requests/steps + engine RPCs |
+| — | `<ts>_performance.sql` | 23 | extra indexes, materialised views, `pg_cron` jobs |
+| — | `<ts>_hardening.sql` | 24 | RLS/privilege fixes discovered by the security audit |
 
 Verification after every migration (part of each phase's test commands):
 `supabase db lint` · `select tablename from pg_tables where schemaname = 'public' and not rowsecurity;`
@@ -324,27 +331,27 @@ Verification after every migration (part of each phase's test commands):
 
 ## 7. Seed data plan (idempotent, re-runnable)
 
-| Seed | Contents |
-|------|----------|
-| Permissions | every `module.action` combination from `02-roles-permissions.md` |
-| Roles | 11 `is_system = true` roles with precedence and the matrix from `02-roles-permissions.md` |
-| Account groups | Assets → Current Assets (Cash, Bank, Inventory, Receivables) + Fixed Assets; Liabilities → Payables, Loans, GST Payable, Customer Advances; Equity → Capital, Drawings, Retained Earnings; Income → Vehicle Sales, Accessory Sales, Service Income, Insurance Commission, RTO Charges, Other Income, Discount Received; Expenses → COGS, Rent, Salary, Electricity, Transport, Fuel, Marketing, Repair & Maintenance, Office, Internet, Phone, Bank Charges, Discount Allowed, Stock Adjustment, Miscellaneous |
-| Accounts | control accounts per showroom (Cash, Bank per bank account, Inventory – Vehicles, Inventory – Spares, Input CGST/SGST/IGST, Output CGST/SGST/IGST, Round Off, Receivable control, Payable control) + company-wide nominal accounts |
-| Categories | expense + income categories from §4.9 |
-| HSN/SAC | two-wheeler HSN (8711…), spares (8714…), service SAC (9987…), accessories — rates configurable, never hardcoded |
-| States | Indian states with GST state codes (place of supply) |
-| Financial year | current Indian FY + monthly `accounting_periods` (`open`) |
-| Document sequences | invoice/PO/GRN/payment/receipt/expense/transfer/journal per showroom per FY |
-| Settings | company defaults (round-off, COGS posting, valuation method, booking validity, approval thresholds) |
-| Demo data | **dev/staging only**: 3 showrooms (INDORE-MAIN, BHOPAL, UJJAIN), one user per role, sample vehicles/items/customers used to prove multi-showroom isolation |
+| Seed | Where / phase | Contents |
+|------|---------------|----------|
+| Permissions | 0004 · Phase 3 | every `module.action` combination from `02-roles-permissions.md` (21 × 7) + `showrooms.view_all` = 148 |
+| Roles | 0004 · Phase 3 | 11 `is_system = true` roles with precedence and the matrix from `02-roles-permissions.md` (592 grants) |
+| Account groups | with the CoA tables · Phase 12 | Assets → Current Assets (Cash, Bank, Inventory, Receivables) + Fixed Assets; Liabilities → Payables, Loans, GST Payable, Customer Advances; Equity → Capital, Drawings, Retained Earnings; Income → Vehicle Sales, Accessory Sales, Service Income, Insurance Commission, RTO Charges, Other Income, Discount Received; Expenses → COGS, Rent, Salary, Electricity, Transport, Fuel, Marketing, Repair & Maintenance, Office, Internet, Phone, Bank Charges, Discount Allowed, Stock Adjustment, Miscellaneous |
+| Accounts | with the CoA tables · Phase 12 | control accounts per showroom (Cash, Bank per bank account, Inventory – Vehicles, Inventory – Spares, Input CGST/SGST/IGST, Output CGST/SGST/IGST, Round Off, Receivable control, Payable control) + company-wide nominal accounts |
+| Categories | with their tables · Phase 13 | expense + income categories from §4.9 |
+| HSN/SAC | with the HSN/tax tables · Phase 8 | two-wheeler HSN (8711…), spares (8714…), service SAC (9987…), accessories — rates configurable, never hardcoded |
+| States | 0004 · Phase 3 | 39 GST state codes (37 active, legacy 25/28 inactive) for place of supply |
+| Financial year | 0004 · Phase 3 | current Indian FY + 12 monthly `accounting_periods` (`open`) via `fn_ensure_financial_year()` |
+| Document sequences | trigger / function · Phase 3 | not seeded rows: all 20 types per showroom per FY, created by the showroom bootstrap trigger and `fn_ensure_financial_year()` |
+| Settings | 0004 · Phase 3 | 6 company keys (`company.name`, `company.currency_code`, `company.locale`, `company.timezone`, `ui.default_theme_mode`, `security.signed_url_ttl_seconds`); per-showroom defaults (round-off, COGS posting, valuation method, booking validity) are `showroom_settings` column defaults; approval thresholds Phase 21 |
+| Demo data | `supabase/seed.sql` · Phase 3 | **dev/local only** (never staging/prod): 3 showrooms (INDORE-MAIN, BHOPAL, UJJAIN), 14 users (one per role + multi-showroom, deactivated and no-role cases); sample vehicles/items/customers arrive with their tables (Phases 8–11) |
 
 ## 8. Financial year, numbering, rounding
 
 - `financial_years.code` = `YYYY-YY` (e.g. `2026-27`), 1 April → 31 March.
-- Document numbers: `{prefix}/{FY short}/{padded seq}` → e.g. `INV/26-27/000123`, prefix configurable per
-  showroom + doc type in `document_sequences`.
+- Document numbers: `{prefix}/{FY short}/{number}{suffix}` → e.g. `IND/26-27/00001`; prefix = showroom
+  `invoice_prefix` + type code; GST documents ≤ 16 characters (as built: `docs/phase-03/README.md` §4).
 - Uniqueness is enforced by `(showroom_id, financial_year_id, invoice_no)` plus a row lock inside
-  `rpc_next_document_number()`, so concurrent sales can never duplicate a number.
+  `fn_next_document_number()`, so concurrent sales can never duplicate a number.
 - Round-off: the `round_off` column stores the difference to the nearest rupee (configurable) and posts to
   the `Round Off` account.
 - Money rounding: line taxable amounts to 2 decimals, tax computed per line on the taxable amount (standard

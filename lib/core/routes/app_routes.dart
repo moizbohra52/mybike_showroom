@@ -7,6 +7,13 @@ abstract final class AppRoutes {
   static const String rootPath = '/';
   static const String notFoundPath = '/not-found';
 
+  // ── Authentication (Phase 5) ───────────────────────────────────────────
+  static const String splashPath = '/splash';
+  static const String loginPath = '/login';
+  static const String selectShowroomPath = '/select-showroom';
+  static const String accessBlockedPath = '/access-blocked';
+  static const String forbiddenPath = '/forbidden';
+
   // ── Phase 2 design-system gallery ──────────────────────────────────────
   static const String galleryName = 'gallery';
   static const String galleryPath = '/gallery';

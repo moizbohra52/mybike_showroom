@@ -47,12 +47,20 @@ Edge Functions)** with **Dio** for raw HTTP and **Firebase Cloud Messaging** for
 | `phase-00/08-roadmap.md` | Phase 1–28 plan, exit criteria, environments, migration & release workflow |
 | `phase-00/09-testing-strategy.md` | Test pyramid, RLS negative tests, cross-platform QA matrix, CI jobs |
 | `phase-00/10-open-questions.md` | Assumptions taken as defaults + confirmations needed before Phase 3 |
+| `phase-02/open-items.md` | Phase 2 audit: open items carried forward (Phase 2 not yet closed) |
+| `phase-03/README.md` | Phase 3 as built: schema, privilege model, numbering, SQLSTATE catalogue, deviations, how to run |
+| `phase-04/README.md` | Phase 4 as built: RBAC helpers, per-table policies, storage buckets/policies, security-test coverage |
+| `phase-05/README.md` | Phase 5 as built: sign-in flow, session RPC, router guard, showroom selection, remote auth settings |
 
 ## 4. Status
 
 | Item | Value |
 |------|-------|
 | Phase 0 (Requirements & Architecture) | **COMPLETE** |
-| Phase 1 (Flutter Foundation) | Not started — awaits `NEXT PHASE` |
+| Phase 1 (Flutter Foundation) | **COMPLETE** |
+| Phase 2 (Common UI Design System) | **IN PROGRESS** — shell overflow fixed; open items in `phase-02/open-items.md` (missing widget tests, G5 `AppCurrencyText`, contrast, `AppDataTable` presentations) |
+| Phase 3 (Supabase Database Foundation) | **IMPLEMENTED** — 4 migrations + dev seed, 218 pgTAP assertions green on an embedded Postgres; remote `supabase db push` pending project link |
+| Phase 4 (Supabase Security) | **IMPLEMENTED** — RBAC helpers + RLS on all 13 tables + 6 storage buckets; 307 pgTAP assertions green; remote push pending |
+| Phase 5 (Authentication) | **IMPLEMENTED** — login / session / showroom selection / guards; 323 pgTAP + 122 Flutter tests green; web + Android build verified |
 | Toolchain verified | Flutter 3.44.8 stable, Dart 3.12.2 (Windows host) |
 | Package versions | verified on pub.dev at time of writing — see `phase-00/07-dependency-plan.md` |

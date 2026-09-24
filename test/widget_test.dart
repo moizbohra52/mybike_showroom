@@ -1,68 +1,30 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mybike_showroom/common/screens/foundation_screen.dart';
 import 'package:mybike_showroom/common/screens/module_placeholder_screen.dart';
 import 'package:mybike_showroom/common/screens/not_found_screen.dart';
 import 'package:mybike_showroom/core/constants/storage_keys.dart';
-import 'package:mybike_showroom/core/routes/app_router.dart';
-import 'package:mybike_showroom/core/storage/preference_store.dart';
-import 'package:mybike_showroom/core/theme/app_theme.dart';
 import 'package:mybike_showroom/core/theme/app_theme_mode.dart';
-import 'package:mybike_showroom/core/theme/theme_controller.dart';
 
+import 'helpers/fake_auth_repository.dart';
 import 'helpers/fake_preference_store.dart';
+import 'helpers/pump_app.dart';
 
-/// Pumps the Phase 1/2 app shell at a fixed physical size with a fresh router.
-///
-/// Every test builds its own router via [AppRouter.createRouter] so navigation
-/// state never leaks between tests, and overrides the theme bootstrap with an
-/// explicit value exactly like `main()` does.
-///
-/// [FoundationScreen] contains perpetual animations — the [AppShimmer] pulse
-/// loop and the [AppButton] `loading: true` spinner in the design-system
-/// showcase — that prevent [WidgetTester.pumpAndSettle] from ever resolving.
-/// We therefore pump a fixed duration (1 s) so the router initialises and the
-/// first frame renders, then proceed without waiting for animations to stop.
-/// This is the standard Flutter approach for screens with infinite animations.
-///
-/// Post-navigation [pumpAndSettle] calls are fine because [ModulePlaceholderScreen]
-/// and [NotFoundScreen] have no perpetual animations.
-///
-/// Returns the store and router so tests can inspect state and navigate.
+/// Pumps the app shell signed in as a single-showroom user holding every
+/// permission, so these tests exercise layout and navigation (the auth
+/// flows live in test/features/auth/).
 Future<(FakePreferenceStore, GoRouter)> pumpApp(
   WidgetTester tester, {
   required Size size,
   AppThemeMode themeMode = AppThemeMode.system,
-}) async {
-  tester.view.physicalSize = size;
-  tester.view.devicePixelRatio = 1.0;
-  addTearDown(tester.view.reset);
-
-  final FakePreferenceStore store = FakePreferenceStore();
-  final GoRouter router = AppRouter.createRouter();
-
-  await tester.pumpWidget(
-    ProviderScope(
-      overrides: [
-        bootstrapThemeModeProvider.overrideWithValue(themeMode),
-        preferenceStoreProvider.overrideWithValue(store),
-      ],
-      child: MaterialApp.router(
-        theme: AppTheme.light,
-        darkTheme: AppTheme.dark,
-        themeMode: themeMode.materialThemeMode,
-        routerConfig: router,
-        debugShowCheckedModeBanner: false,
-      ),
-    ),
+}) {
+  return pumpMyBikeApp(
+    tester,
+    size: size,
+    themeMode: themeMode,
+    auth: FakeAuthRepository(session: testSession(), signedIn: true),
   );
-  // FoundationScreen has perpetual animations (shimmer pulse + loading button
-  // showcase). pump(duration) advances the clock enough to build the first
-  // frame without hanging on an animation that never settles.
-  await tester.pump(const Duration(seconds: 1));
-  return (store, router);
 }
 
 void main() {

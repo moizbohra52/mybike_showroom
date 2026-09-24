@@ -204,6 +204,8 @@ abstract final class FailureMessages {
   static const String auth = 'Your session has expired. Please sign in again.';
   static const String invalidCredentials =
       'The email or password you entered is incorrect.';
+  static const String accountDisabled =
+      'Your account has been deactivated. Contact your administrator.';
   static const String permission =
       'You do not have permission to perform this action.';
   static const String showroomAccess =

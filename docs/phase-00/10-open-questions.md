@@ -19,6 +19,8 @@
 | Q8 | Region | Closest Indian region available to the organisation (e.g. `ap-south-1`) |
 | Q9 | Seed demo data in dev? | Yes — 3 showrooms, users per role, sample vehicles/items for multi-showroom tests |
 
+**Phase 3 status (2026-09-23):** Q6 — no project linked yet (CLI not logged in); migrations are ready for `supabase db push`. Q7 — CLI 2.117.0 installed, not logged in. Q8 — still to choose; `ap-south-1` (Mumbai) recommended. Q9 — yes: `supabase/seed.sql` (3 showrooms, 14 users); vehicles/items join the seed with their phases.
+
 ## 3. Business decisions (defaults already assumed in the design)
 
 | # | Topic | Default taken | Impact if changed |

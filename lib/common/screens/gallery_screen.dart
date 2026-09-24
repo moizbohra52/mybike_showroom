@@ -235,9 +235,9 @@ class _GalleryScreenState extends State<GalleryScreen> {
             ),
 
             // ── Currency Text ───────────────────────────────────────────
-            _GallerySection(
+            const _GallerySection(
               title: 'AppCurrencyText',
-              child: const Wrap(
+              child: Wrap(
                 spacing: AppDimensions.space24,
                 runSpacing: AppDimensions.space8,
                 crossAxisAlignment: WrapCrossAlignment.center,
@@ -281,9 +281,9 @@ class _GalleryScreenState extends State<GalleryScreen> {
             ),
 
             // ── Text Fields ─────────────────────────────────────────────
-            _GallerySection(
+            const _GallerySection(
               title: 'AppTextField',
-              child: const Wrap(
+              child: Wrap(
                 spacing: AppDimensions.space16,
                 runSpacing: AppDimensions.space16,
                 children: <Widget>[
@@ -384,7 +384,6 @@ class _GalleryScreenState extends State<GalleryScreen> {
                   ),
                   AppDataTableColumn<_Invoice>(
                     title: 'Status',
-                    flex: 1,
                     cellBuilder: (_, _Invoice i) =>
                         AppStatusBadge.fromKey(statusKey: i.status),
                   ),
@@ -405,9 +404,9 @@ class _GalleryScreenState extends State<GalleryScreen> {
             ),
 
             // ── Loading / Shimmer ───────────────────────────────────────
-            _GallerySection(
+            const _GallerySection(
               title: 'AppLoading & AppShimmer',
-              child: const Column(
+              child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: <Widget>[
                   AppLoading(),

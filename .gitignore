@@ -48,3 +48,8 @@ app.*.map.json
 # the placeholder templates are committed (see config/README.md).
 config/*.json
 !config/*.example.json
+
+# Local secrets (never commit)
+.env
+.env.*
+!.env.example
