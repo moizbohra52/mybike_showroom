@@ -123,6 +123,11 @@ class UserSession {
     return null;
   }
 
+  /// Whether [permission] applies in [showroomId]: granted there or globally
+  /// (global roles apply in every showroom). UI hint only.
+  bool can(String permission, String showroomId) =>
+      globalPermissions.contains(permission) || (showroomById(showroomId)?.permissions.contains(permission) ?? false);
+
   /// Permissions in effect for [selection]: the showroom's, or the global set
   /// in ALL SHOWROOMS mode.
   Set<String> permissionsFor(ShowroomSelection selection) {

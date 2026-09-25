@@ -44,12 +44,12 @@ void main() {
 
     // Navigate via the sidebar tile (ListTile avoids matching the module
     // card that carries the same label).
-    await tester.tap(find.widgetWithText(ListTile, 'Inventory'));
+    await tester.tap(find.widgetWithText(ListTile, 'Purchases'));
     // ModulePlaceholderScreen has no infinite animations — pumpAndSettle is safe.
     await tester.pumpAndSettle();
 
     expect(find.byType(ModulePlaceholderScreen), findsOneWidget);
-    expect(find.text('Planned in Phase 9'), findsOneWidget);
+    expect(find.text('Planned in Phase 10'), findsOneWidget);
 
     // The compact theme switcher cycles system → light and persists it.
     await tester.tap(find.widgetWithText(TextButton, 'System'));
@@ -92,11 +92,11 @@ void main() {
   ) async {
     await pumpApp(tester, size: const Size(1280, 800));
 
-    // Sidebar → Showrooms (Phase 7 module).
-    await tester.tap(find.widgetWithText(ListTile, 'Showrooms'));
+    // Sidebar → Purchases (Phase 10 module, still a placeholder).
+    await tester.tap(find.widgetWithText(ListTile, 'Purchases'));
     await tester.pumpAndSettle();
 
-    expect(find.text('Planned in Phase 7'), findsOneWidget);
+    expect(find.text('Planned in Phase 10'), findsOneWidget);
   });
 
   testWidgets('unknown route renders the 404 screen', (

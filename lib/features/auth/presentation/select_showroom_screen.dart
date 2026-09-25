@@ -50,11 +50,7 @@ class SelectShowroomScreen extends ConsumerWidget {
           ListTile(
             leading: const Icon(Icons.storefront_outlined),
             title: Text(showroom.name, maxLines: 1, overflow: TextOverflow.ellipsis),
-            subtitle: Text(
-              showroom.isActive ? showroom.code : '${showroom.code} · inactive',
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
+            subtitle: Text(showroom.code, maxLines: 1, overflow: TextOverflow.ellipsis),
             selected: signedIn!.selection?.showroomId == showroom.id,
             onTap: () => choose(context, ref, ShowroomSelection.showroom(showroom.id)),
           ),

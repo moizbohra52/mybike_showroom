@@ -20,6 +20,7 @@ export 'app_empty_state.dart';
 export 'app_error_state.dart';
 export 'app_form_dialog.dart';
 export 'app_form_section.dart';
+export 'app_info_row.dart';
 export 'app_loading.dart';
 export 'app_outlined_button.dart';
 export 'app_pagination.dart';

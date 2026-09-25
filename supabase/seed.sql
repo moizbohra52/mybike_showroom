@@ -145,6 +145,15 @@ update public.showroom_settings ss
        )
    and ss.default_place_of_supply_state is null;
 
+-- Bank details printed on invoices (Phase 7). Ujjain has none on purpose.
+insert into public.bank_accounts (showroom_id, account_name, bank_name, account_number, ifsc, branch, upi_id, is_default)
+values
+  ('5a000000-0000-4000-8000-000000000001', 'MyBike Motors Private Limited', 'HDFC Bank', '50200012345678',
+   'HDFC0001234', 'Vijay Nagar, Indore', 'mybike.indore@hdfcbank', true),
+  ('5a000000-0000-4000-8000-000000000002', 'MyBike Motors Private Limited', 'State Bank of India', '38123456789',
+   'SBIN0005678', 'MP Nagar, Bhopal', null, true)
+on conflict (showroom_id, account_number) do nothing;
+
 -- -----------------------------------------------------------------------------
 -- 3. Showroom access
 -- -----------------------------------------------------------------------------
@@ -190,3 +199,90 @@ select a.profile_id, r.id, a.showroom_id
   ) as a (profile_id, role_code, showroom_id)
   join public.roles r on r.code = a.role_code
 on conflict do nothing;
+
+-- -----------------------------------------------------------------------------
+-- 5. Vehicle catalogue and units (Phase 8). Prices and specifications are
+--    illustrative dev data, not a price list.
+-- -----------------------------------------------------------------------------
+insert into public.vehicle_brands (id, code, name, country)
+values
+  ('c1000000-0000-4000-8000-000000000001', 'HONDA', 'Honda', 'Japan'),
+  ('c1000000-0000-4000-8000-000000000002', 'TVS', 'TVS Motor', 'India'),
+  ('c1000000-0000-4000-8000-000000000003', 'ATHER', 'Ather Energy', 'India'),
+  ('c1000000-0000-4000-8000-000000000004', 'BAJAJ', 'Bajaj Auto', 'India')
+on conflict (id) do nothing;
+
+insert into public.vehicle_models (id, brand_id, name, category)
+values
+  ('c2000000-0000-4000-8000-000000000001', 'c1000000-0000-4000-8000-000000000001', 'Activa 6G', 'scooter'),
+  ('c2000000-0000-4000-8000-000000000002', 'c1000000-0000-4000-8000-000000000001', 'Shine 125', 'motorcycle'),
+  ('c2000000-0000-4000-8000-000000000003', 'c1000000-0000-4000-8000-000000000002', 'iQube', 'scooter'),
+  ('c2000000-0000-4000-8000-000000000004', 'c1000000-0000-4000-8000-000000000003', '450X', 'scooter'),
+  ('c2000000-0000-4000-8000-000000000005', 'c1000000-0000-4000-8000-000000000004', 'Freedom 125', 'motorcycle')
+on conflict (id) do nothing;
+
+insert into public.vehicle_variants (
+  id, model_id, name, fuel_type, hsn_code, ex_showroom_price, transmission, top_speed_kmph,
+  engine_cc, mileage_kmpl, fuel_tank_litres,
+  motor_power_kw, battery_capacity_kwh, battery_type, range_km, charging_time_hours, charging_type,
+  warranty_months, warranty_km, battery_warranty_months, battery_warranty_km
+)
+values
+  ('c3000000-0000-4000-8000-000000000001', 'c2000000-0000-4000-8000-000000000001', 'STD', 'petrol', '871120',
+   76684.00, 'Automatic (CVT)', 85, 109.5, 50.0, 5.3, null, null, null, null, null, null, 36, 42000, null, null),
+  ('c3000000-0000-4000-8000-000000000002', 'c2000000-0000-4000-8000-000000000001', 'DLX', 'petrol', '871120',
+   80000.00, 'Automatic (CVT)', 85, 109.5, 50.0, 5.3, null, null, null, null, null, null, 36, 42000, null, null),
+  ('c3000000-0000-4000-8000-000000000003', 'c2000000-0000-4000-8000-000000000002', 'Drum', 'petrol', '871120',
+   81251.00, 'Manual (5-speed)', 100, 123.9, 55.0, 10.5, null, null, null, null, null, null, 36, 42000, null, null),
+  ('c3000000-0000-4000-8000-000000000004', 'c2000000-0000-4000-8000-000000000003', '2.2 kWh', 'electric', '871160',
+   94999.00, 'Automatic', 75, null, null, null, 4.40, 2.20, 'Li-ion', 75, 2.0, 'Portable 650 W',
+   36, 50000, 36, 50000),
+  ('c3000000-0000-4000-8000-000000000005', 'c2000000-0000-4000-8000-000000000004', '3.7 kWh', 'electric', '871160',
+   149999.00, 'Automatic', 90, null, null, null, 6.40, 3.70, 'Li-ion', 130, 5.7, 'Home charger / fast charging',
+   36, 30000, 36, 30000),
+  ('c3000000-0000-4000-8000-000000000006', 'c2000000-0000-4000-8000-000000000005', 'NG04 Drum', 'cng', '871120',
+   95000.00, 'Manual (5-speed)', 90, 124.6, 65.0, 2.0, null, null, null, null, null, null, 60, 75000, null, null)
+on conflict (id) do nothing;
+
+insert into public.vehicles (
+  id, showroom_id, variant_id, vin, chassis_number, engine_number, motor_number, battery_number,
+  color, manufacturing_year, model_year
+)
+values
+  ('c4000000-0000-4000-8000-000000000001', '5a000000-0000-4000-8000-000000000001', 'c3000000-0000-4000-8000-000000000001',
+   'ME4JF508ARJ000101', 'ME4JF508ARJ000101', 'JF50E7000101', null, null, 'Pearl Precious White', 2026, 2026),
+  ('c4000000-0000-4000-8000-000000000002', '5a000000-0000-4000-8000-000000000001', 'c3000000-0000-4000-8000-000000000004',
+   'MD6EVB9A2R1000201', 'MD6EVB9A2R1000201', null, 'IQM24100201', 'IQB22K0100201', 'Titanium Grey', 2026, 2026),
+  ('c4000000-0000-4000-8000-000000000003', '5a000000-0000-4000-8000-000000000002', 'c3000000-0000-4000-8000-000000000005',
+   'MB9AE3A2XR0000301', 'MB9AE3A2XR0000301', null, 'ATHM640000301', 'ATHB37K0000301', 'Space Grey', 2026, 2026),
+  ('c4000000-0000-4000-8000-000000000004', '5a000000-0000-4000-8000-000000000002', 'c3000000-0000-4000-8000-000000000006',
+   'MD2B8GBX1R0000401', 'MD2B8GBX1R0000401', 'JZXCRL00401', null, null, 'Racing Red', 2026, 2026)
+on conflict (id) do nothing;
+
+-- -----------------------------------------------------------------------------
+-- 6. Stock movements (Phase 9). Inserted directly (as postgres) rather than
+--    through the RPCs, which check the caller's own permissions via auth.uid()
+--    — meaningless outside a real request. Triggers still apply normally.
+-- -----------------------------------------------------------------------------
+-- No natural unique key to hang ON CONFLICT off, so guard idempotency with a
+-- plain existence check instead (a second run must not re-insert the row and
+-- push an already-received vehicle through the trigger's guard again).
+insert into public.stock_ledger (showroom_id, movement_type, vehicle_id, unit_cost, value, reference_no, remarks)
+select v.showroom_id, 'purchase_receipt', v.id, v.unit_cost, v.unit_cost, v.reference_no, v.remarks
+  from (values
+    ('5a000000-0000-4000-8000-000000000001'::uuid, 'c4000000-0000-4000-8000-000000000001'::uuid,
+     68000.00::numeric, 'DEV-GRN-001', 'Dev seed: received into Indore stock'),
+    ('5a000000-0000-4000-8000-000000000002'::uuid, 'c4000000-0000-4000-8000-000000000003'::uuid,
+     130000.00::numeric, 'DEV-GRN-002', 'Dev seed: received into Bhopal stock')
+  ) as v (showroom_id, id, unit_cost, reference_no, remarks)
+ where not exists (
+   select 1 from public.stock_ledger l where l.vehicle_id = v.id and l.movement_type = 'purchase_receipt'
+ );
+
+insert into public.vehicle_reservations (vehicle_id, showroom_id, reserved_by)
+select 'c4000000-0000-4000-8000-000000000001', '5a000000-0000-4000-8000-000000000001',
+       'a0000000-0000-4000-8000-000000000006'
+ where not exists (
+   select 1 from public.vehicle_reservations where vehicle_id = 'c4000000-0000-4000-8000-000000000001' and released_at is null
+ );
+update public.vehicles set status = 'reserved' where id = 'c4000000-0000-4000-8000-000000000001' and status = 'in_stock';

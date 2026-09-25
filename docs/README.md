@@ -52,6 +52,9 @@ Edge Functions)** with **Dio** for raw HTTP and **Firebase Cloud Messaging** for
 | `phase-04/README.md` | Phase 4 as built: RBAC helpers, per-table policies, storage buckets/policies, security-test coverage |
 | `phase-05/README.md` | Phase 5 as built: sign-in flow, session RPC, router guard, showroom selection, remote auth settings |
 | `phase-06/README.md` | Phase 6 as built: delegation rules (rank), user / role screens, permission matrix, `admin-users` Edge Function |
+| `phase-07/README.md` | Phase 7 as built: showroom screens, bank accounts, invoice prefix rule, deactivation and the switcher |
+| `phase-08/README.md` | Phase 8 as built: vehicle catalogue (brands/models/variants), petrol/EV specifications, vehicle register, duplicate validation |
+| `phase-09/README.md` | Phase 9 as built: stock ledger, receive/reserve/transfer/damage/adjust, status history, stock summary and ageing |
 
 ## 4. Status
 
@@ -64,5 +67,8 @@ Edge Functions)** with **Dio** for raw HTTP and **Firebase Cloud Messaging** for
 | Phase 4 (Supabase Security) | **IMPLEMENTED** — RBAC helpers + RLS on all 13 tables + 6 storage buckets; 307 pgTAP assertions green; remote push pending |
 | Phase 5 (Authentication) | **IMPLEMENTED** — login / session / showroom selection / guards; 323 pgTAP + 122 Flutter tests green; web + Android build verified |
 | Phase 6 (Users / Roles / Permissions) | **IMPLEMENTED** — user & role management, permission matrix, rank-based delegation in RLS, `admin-users` Edge Function; 403 pgTAP + 10 Deno + 143 Flutter tests green; web + Android build verified |
+| Phase 7 (Showroom Management) | **IMPLEMENTED** — showroom create / edit / (de)activate, GST, settings, invoice texts and numbering, bank accounts, staff assignment, switcher follows changes; 436 pgTAP + 156 Flutter tests green; web + Android build verified |
+| Phase 8 (Vehicle Master) | **IMPLEMENTED** — brand/model/variant catalogue, petrol and EV specifications (conditional fields), vehicle register (VIN/chassis/engine/motor/battery), duplicate validation in UI and DB; 475 pgTAP + 166 Flutter tests green; web + Android build verified |
+| Phase 9 (Inventory & Stock) | **IMPLEMENTED** — vehicle lifecycle (receive/reserve/release/transfer/mark damaged/adjust), append-only stock ledger as the single source of truth, status history, stock summary + ageing views; 526 pgTAP + 180 Flutter tests green; web + Android build verified |
 | Toolchain verified | Flutter 3.44.8 stable, Dart 3.12.2 (Windows host) |
 | Package versions | verified on pub.dev at time of writing — see `phase-00/07-dependency-plan.md` |

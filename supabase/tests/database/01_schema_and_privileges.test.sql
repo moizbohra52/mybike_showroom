@@ -68,7 +68,7 @@ select has_table('public', 'user_roles', 'tables: public.user_roles exists');
 select has_table('public', 'user_showrooms', 'tables: public.user_showrooms exists');
 
 -- Later phases create these together with their RLS policies.
-select hasnt_table('public', 'vehicles', 'tables: public.vehicles does not exist yet (later phase)');
+select has_table('public', 'vehicles', 'tables: public.vehicles exists (Phase 8)');
 select hasnt_table('public', 'customers', 'tables: public.customers does not exist yet (later phase)');
 select hasnt_table('public', 'journal_entries', 'tables: public.journal_entries does not exist yet (later phase)');
 select hasnt_table('public', 'audit_logs', 'tables: public.audit_logs does not exist yet (later phase)');
@@ -83,8 +83,12 @@ select set_eq(
   $$ values ('states'), ('showrooms'), ('showroom_settings'), ('settings'),
             ('financial_years'), ('accounting_periods'), ('document_sequences'),
             ('profiles'), ('roles'), ('permissions'), ('role_permissions'),
-            ('user_roles'), ('user_showrooms') $$,
-  'tables: public contains exactly the 13 Phase 3 tables (no other tables or views)'
+            ('user_roles'), ('user_showrooms'), ('bank_accounts'),
+            ('vehicle_brands'), ('vehicle_models'), ('vehicle_variants'), ('vehicles'),
+            ('vehicle_status_history'), ('vehicle_reservations'), ('stock_ledger'), ('stock_transfers'),
+            ('stock_transfer_items'), ('stock_adjustments'), ('stock_adjustment_items'),
+            ('v_current_stock'), ('v_stock_ageing') $$,
+  'tables: public contains exactly the Phase 3, 7, 8 and 9 tables/views (no others)'
 );
 
 -- -----------------------------------------------------------------------------
@@ -113,8 +117,10 @@ select set_eq(
         and a.attnum > 0
         and not a.attisdropped
         and t.typname = 'citext' $$,
-  $$ values ('profiles.email extensions.citext'), ('showrooms.email extensions.citext') $$,
-  'columns: profiles.email and showrooms.email are extensions.citext (case-insensitive)'
+  $$ values ('profiles.email extensions.citext'), ('showrooms.email extensions.citext'),
+            ('vehicle_brands.name extensions.citext'), ('vehicle_models.name extensions.citext'),
+            ('vehicle_variants.name extensions.citext') $$,
+  'columns: e-mails and catalogue names are extensions.citext (case-insensitive)'
 );
 
 -- -----------------------------------------------------------------------------
@@ -302,8 +308,12 @@ select set_eq(
             ('has_permission_for'), ('has_permission'), ('can_view_profile'), ('fn_try_uuid'), ('rpc_get_my_session'),
             ('my_role_rank'), ('can_manage_user_in'), ('can_manage_user'), ('can_assign_role'), ('can_edit_role'),
             ('rpc_admin_update_user'), ('rpc_admin_set_user_status'), ('rpc_get_user_access'),
-            ('rpc_grantable_roles') $$,
-  'functions: authenticated can execute exactly the 25 granted helpers and RPCs'
+            ('rpc_grantable_roles'), ('rpc_create_showroom'),
+            ('fn_normalize_identifier'), ('rpc_vehicle_identifier_conflicts'),
+            ('rpc_receive_vehicle_stock'), ('rpc_reserve_vehicle'), ('rpc_release_reservation'),
+            ('rpc_mark_vehicle_damaged'), ('rpc_create_stock_transfer'), ('rpc_receive_stock_transfer'),
+            ('rpc_create_stock_adjustment') $$,
+  'functions: authenticated can execute exactly the 35 granted helpers and RPCs'
 );
 
 select set_eq(
@@ -317,8 +327,11 @@ select set_eq(
             ('has_permission_for'), ('has_permission'), ('can_view_profile'), ('rpc_get_my_session'),
             ('my_role_rank'), ('can_manage_user_in'), ('can_manage_user'), ('can_assign_role'), ('can_edit_role'),
             ('rpc_admin_update_user'), ('rpc_admin_set_user_status'), ('rpc_get_user_access'),
-            ('fn_sync_auth_user_invited_by') $$,
-  'functions: the SECURITY DEFINER functions are exactly the 21 reviewed ones'
+            ('fn_sync_auth_user_invited_by'), ('fn_showrooms_sync_prefix'), ('rpc_create_showroom'),
+            ('rpc_vehicle_identifier_conflicts'), ('fn_stock_ledger_apply'), ('rpc_receive_vehicle_stock'),
+            ('rpc_reserve_vehicle'), ('rpc_release_reservation'), ('rpc_mark_vehicle_damaged'),
+            ('rpc_create_stock_transfer'), ('rpc_receive_stock_transfer'), ('rpc_create_stock_adjustment') $$,
+  'functions: the SECURITY DEFINER functions are exactly the 32 reviewed ones'
 );
 
 select is_empty(

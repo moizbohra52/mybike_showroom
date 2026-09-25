@@ -28,6 +28,7 @@ abstract final class AppRoutes {
   // ── Administration ─────────────────────────────────────────────────────
   static const String showroomsName = 'showrooms';
   static const String showroomsPath = '/showrooms';
+  static String showroomDetailPath(String id) => '$showroomsPath/$id';
 
   static const String usersName = 'users';
   static const String usersPath = '/users';
@@ -55,6 +56,8 @@ abstract final class AppRoutes {
   // ── Masters & operations ───────────────────────────────────────────────
   static const String vehiclesName = 'vehicles';
   static const String vehiclesPath = '/vehicles';
+  static String vehicleUnitPath(String id) => '$vehiclesPath/units/$id';
+  static String vehicleVariantPath(String id) => '$vehiclesPath/variants/$id';
 
   static const String inventoryName = 'inventory';
   static const String inventoryPath = '/inventory';

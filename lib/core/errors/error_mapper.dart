@@ -16,9 +16,32 @@ abstract final class ErrorMapper {
     'MB004': 'The numbering series for this document is full. Ask an administrator to start a new series.',
     'MB010': 'The accounting period does not match its financial year.',
     'MB011': 'Document numbering cannot be changed this way.',
+    'MB012': 'The invoice prefix cannot change: document numbers were already issued with it.',
     'MB020': 'System roles cannot be renamed, deactivated or deleted.',
     'MB021': 'This permission cannot be changed for that role.',
     'MB022': 'Super Admin can only be assigned for all showrooms.',
+    'MB030': 'The fuel type of this variant cannot change: vehicles of it are registered.',
+    'MB041': 'This vehicle has no active reservation.',
+    'MB045': 'This transfer is not awaiting receipt.',
+    'MB046': 'This stock movement is not supported yet.',
+  };
+
+  /// Unique constraints with a message that names the duplicate
+  /// (`field` = the form field to highlight).
+  static const Map<String, ({String field, String message})> uniqueConstraints = <String, ({String field, String message})>{
+    'vehicle_brands_name_key': (field: 'name', message: 'A brand with this name already exists.'),
+    'vehicle_brands_code_key': (field: 'code', message: 'A brand with this code already exists.'),
+    'vehicle_models_brand_name_key': (field: 'name', message: 'This brand already has a model with this name.'),
+    'vehicle_variants_model_name_key': (field: 'name', message: 'This model already has a variant with this name.'),
+    'uq_vehicles_vin_active': (field: 'vin', message: 'This VIN is already registered.'),
+    'uq_vehicles_chassis_active': (field: 'chassis_number', message: 'This chassis number is already registered.'),
+    'uq_vehicles_engine_active': (field: 'engine_number', message: 'This engine number is already registered.'),
+    'uq_vehicles_motor_active': (field: 'motor_number', message: 'This motor number is already registered.'),
+    'uq_vehicles_battery_active': (field: 'battery_number', message: 'This battery number is already registered.'),
+    'showrooms_code_key': (field: 'code', message: 'Another showroom already uses this code.'),
+    'showrooms_invoice_prefix_key': (field: 'invoice_prefix', message: 'Another showroom already uses this invoice prefix.'),
+    'bank_accounts_showroom_number_key': (field: 'account_number', message: 'This account number is already added.'),
+    'profiles_employee_code_key': (field: 'employee_code', message: 'Another user already has this employee code.'),
   };
 
   /// Runs [call] and converts every SDK error into an [AppFailure].
@@ -107,16 +130,33 @@ abstract final class ErrorMapper {
         stackTrace: stackTrace,
       );
     }
+    if (code == 'MB040') {
+      // One code, many scenarios (receive/reserve/transfer/damage/adjust each
+      // has its own precise, already user-safe message written in SQL) — pass
+      // it through instead of blurring every case into one static string.
+      return BusinessRuleFailure(message: error.message, ruleCode: code, cause: error, stackTrace: stackTrace);
+    }
     return switch (code) {
       '42501' => PermissionFailure(cause: error, stackTrace: stackTrace),
       'PGRST301' || 'PGRST303' =>
         AuthFailure(isSessionExpired: true, cause: error, stackTrace: stackTrace),
-      '23505' => ConflictFailure(cause: error, stackTrace: stackTrace),
+      '23505' => mapUnique(error, stackTrace),
       // Foreign key RESTRICT / NO ACTION: the row is still referenced.
       '23001' || '23503' => BusinessRuleFailure(message: FailureMessages.inUse, ruleCode: code, cause: error, stackTrace: stackTrace),
       '23514' || '23502' || '22P02' => ValidationFailure(cause: error, stackTrace: stackTrace),
       'PGRST116' => NotFoundFailure(cause: error, stackTrace: stackTrace),
       _ => UnknownFailure(cause: error, stackTrace: stackTrace),
     };
+  }
+
+  /// Names the duplicate when the constraint is known (PostgreSQL puts its
+  /// name in the message); otherwise the generic duplicate message.
+  static ConflictFailure mapUnique(PostgrestException error, [StackTrace? stackTrace]) {
+    for (final MapEntry<String, ({String field, String message})> entry in uniqueConstraints.entries) {
+      if (error.message.contains('"${entry.key}"')) {
+        return ConflictFailure(message: entry.value.message, field: entry.value.field, cause: error, stackTrace: stackTrace);
+      }
+    }
+    return ConflictFailure(cause: error, stackTrace: stackTrace);
   }
 }

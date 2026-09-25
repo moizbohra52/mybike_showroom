@@ -8,12 +8,18 @@ import 'package:mybike_showroom/core/theme/app_theme.dart';
 import 'package:mybike_showroom/core/theme/app_theme_mode.dart';
 import 'package:mybike_showroom/core/theme/theme_controller.dart';
 import 'package:mybike_showroom/features/auth/data/auth_repository.dart';
+import 'package:mybike_showroom/features/inventory/data/inventory_repository.dart';
 import 'package:mybike_showroom/features/roles/data/roles_repository.dart';
+import 'package:mybike_showroom/features/showrooms/data/showrooms_repository.dart';
 import 'package:mybike_showroom/features/users/data/users_repository.dart';
+import 'package:mybike_showroom/features/vehicles/data/vehicles_repository.dart';
 
 import 'fake_admin_repositories.dart';
 import 'fake_auth_repository.dart';
+import 'fake_inventory_repository.dart';
 import 'fake_preference_store.dart';
+import 'fake_showrooms_repository.dart';
+import 'fake_vehicles_repository.dart';
 
 /// Pumps the whole app (guarded router + shell) at [size] with fakes.
 ///
@@ -26,6 +32,9 @@ Future<(FakePreferenceStore, GoRouter)> pumpMyBikeApp(
   FakePreferenceStore? store,
   FakeUsersRepository? users,
   FakeRolesRepository? roles,
+  FakeShowroomsRepository? showrooms,
+  FakeVehiclesRepository? vehicles,
+  FakeInventoryRepository? inventory,
   AppThemeMode themeMode = AppThemeMode.system,
 }) async {
   tester.view.physicalSize = size;
@@ -40,6 +49,9 @@ Future<(FakePreferenceStore, GoRouter)> pumpMyBikeApp(
       authRepositoryProvider.overrideWithValue(auth),
       if (users != null) usersRepositoryProvider.overrideWithValue(users),
       if (roles != null) rolesRepositoryProvider.overrideWithValue(roles),
+      if (showrooms != null) showroomsRepositoryProvider.overrideWithValue(showrooms),
+      if (vehicles != null) vehiclesRepositoryProvider.overrideWithValue(vehicles),
+      if (inventory != null) inventoryRepositoryProvider.overrideWithValue(inventory),
     ],
   );
   addTearDown(container.dispose);

@@ -37,8 +37,14 @@ final class FakeAuthRepository implements AuthRepository {
     signedIn = false;
   }
 
+  /// How often the session was (re)loaded.
+  int fetchCalls = 0;
+
   @override
-  Future<UserSession?> fetchSession() async => session;
+  Future<UserSession?> fetchSession() async {
+    fetchCalls++;
+    return session;
+  }
 
   /// Simulates the SDK ending the session (refresh failure, other device).
   void expireSession() {

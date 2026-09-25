@@ -45,6 +45,11 @@ class UsersScreenState extends ConsumerState<UsersScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // Switching showroom in the header moves the filter along.
+    ref.listen<ShowroomSelection?>(
+      currentSelectionProvider,
+      (_, ShowroomSelection? next) => update(query.copyWith(showroomId: () => next?.showroomId, page: 1)),
+    );
     final SessionState? state = ref.watch(sessionControllerProvider).value;
     final List<SessionShowroom> showrooms =
         state is SignedIn ? state.session?.showrooms ?? const <SessionShowroom>[] : const <SessionShowroom>[];

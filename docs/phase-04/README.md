@@ -50,7 +50,7 @@ Decisions:
 - **No `FORCE ROW LEVEL SECURITY`**: the owner (`postgres`) has `BYPASSRLS` on Supabase, so FORCE would change
   nothing; API roles are always subject to RLS.
 - Phase 7 note: an ADMIN who creates a showroom cannot read it back until assigned to it (PostgREST
-  `return=representation` would fail) — the Phase 7 create flow must assign the creator in the same RPC.
+  `return=representation` would fail) — **resolved in Phase 7**: `rpc_create_showroom` assigns the creator.
 
 ## 3. Storage
 

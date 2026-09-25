@@ -15,10 +15,15 @@ import 'package:mybike_showroom/features/auth/presentation/access_blocked_screen
 import 'package:mybike_showroom/features/auth/presentation/login_screen.dart';
 import 'package:mybike_showroom/features/auth/presentation/select_showroom_screen.dart';
 import 'package:mybike_showroom/features/auth/presentation/splash_screen.dart';
+import 'package:mybike_showroom/features/inventory/presentation/inventory_screen.dart';
 import 'package:mybike_showroom/features/roles/presentation/role_detail_screen.dart';
 import 'package:mybike_showroom/features/roles/presentation/roles_screen.dart';
+import 'package:mybike_showroom/features/showrooms/presentation/showroom_detail_screen.dart';
+import 'package:mybike_showroom/features/showrooms/presentation/showrooms_screen.dart';
 import 'package:mybike_showroom/features/users/presentation/user_detail_screen.dart';
 import 'package:mybike_showroom/features/users/presentation/users_screen.dart';
+import 'package:mybike_showroom/features/vehicles/presentation/vehicle_detail_screens.dart';
+import 'package:mybike_showroom/features/vehicles/presentation/vehicles_screen.dart';
 
 /// Centralised `go_router` configuration.
 ///
@@ -35,7 +40,14 @@ abstract final class AppRouter {
   };
 
   /// Modules with real screens; the rest show [ModulePlaceholderScreen].
-  static const Set<String> implementedModules = <String>{ModuleKeys.dashboard, ModuleKeys.users, ModuleKeys.roles};
+  static const Set<String> implementedModules = <String>{
+    ModuleKeys.dashboard,
+    ModuleKeys.showrooms,
+    ModuleKeys.vehicles,
+    ModuleKeys.inventory,
+    ModuleKeys.users,
+    ModuleKeys.roles,
+  };
 
   static GoRouter createRouter({
     required GoRouterRedirect redirect,
@@ -59,6 +71,37 @@ abstract final class AppRouter {
               path: AppRoutes.dashboardPath,
               name: AppRoutes.dashboardName,
               builder: (_, _) => const FoundationScreen(),
+            ),
+            GoRoute(
+              path: AppRoutes.inventoryPath,
+              name: AppRoutes.inventoryName,
+              builder: (_, _) => const InventoryScreen(),
+            ),
+            GoRoute(
+              path: AppRoutes.vehiclesPath,
+              name: AppRoutes.vehiclesName,
+              builder: (_, _) => const VehiclesScreen(),
+              routes: <RouteBase>[
+                GoRoute(
+                  path: 'units/:id',
+                  builder: (_, GoRouterState state) => VehicleUnitScreen(unitId: state.pathParameters['id']!),
+                ),
+                GoRoute(
+                  path: 'variants/:id',
+                  builder: (_, GoRouterState state) => VariantDetailScreen(variantId: state.pathParameters['id']!),
+                ),
+              ],
+            ),
+            GoRoute(
+              path: AppRoutes.showroomsPath,
+              name: AppRoutes.showroomsName,
+              builder: (_, _) => const ShowroomsScreen(),
+              routes: <RouteBase>[
+                GoRoute(
+                  path: ':id',
+                  builder: (_, GoRouterState state) => ShowroomDetailScreen(showroomId: state.pathParameters['id']!),
+                ),
+              ],
             ),
             GoRoute(
               path: AppRoutes.usersPath,

@@ -214,6 +214,8 @@ Custom errors use class `MB`. The `hint` is a stable machine key. In Phase 5 the
 | `MB004` | GST series exhausted (would exceed 16 chars) | `fn_next_document_number` | `sequence_exhausted` |
 | `MB010` | Invalid accounting period | `fn_accounting_period_guard` | `period_outside_financial_year`, `period_number_mismatch` |
 | `MB011` | Illegal series change | `fn_document_sequences_guard` | `sequence_scope_immutable`, `sequence_cannot_decrease` |
+| `MB012` | Invoice prefix in use (Phase 7) | `fn_showrooms_sync_prefix` | `invoice_prefix_in_use` |
+| `MB030` | Variant fuel type in use (Phase 8) | `fn_vehicle_variants_guard` (fuel type changed while vehicles of it are registered) | `variant_fuel_type_in_use` |
 | `MB020` | System role protected | `fn_roles_guard` (rename, demote, deactivate or delete a system role; app user creating one) | `system_role_protected` |
 | `MB021` | Forbidden grant | `fn_role_permissions_guard` | `viewer_read_only`, `view_all_super_admin_only` |
 | `MB022` | SUPER_ADMIN assigned per showroom | `fn_user_roles_guard` | `super_admin_is_global` |

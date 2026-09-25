@@ -40,7 +40,7 @@ The project is built **one phase at a time**; each phase ends with a structured 
 (implemented / files / dependencies / DB / security / tests / checklist / expected result / known issues)
 and then stops until `NEXT PHASE` or `CONTINUE` is given.
 
-Current status: Phases 0–1 complete · Phase 2 in progress ([open items](docs/phase-02/open-items.md)) · Phase 3 implemented ([database](docs/phase-03/README.md)) · Phase 4 implemented ([security](docs/phase-04/README.md)) · Phase 5 implemented ([authentication](docs/phase-05/README.md)) · Phase 6 implemented ([users, roles, permissions](docs/phase-06/README.md)).
+Current status: Phases 0–1 complete · Phase 2 in progress ([open items](docs/phase-02/open-items.md)) · Phase 3 implemented ([database](docs/phase-03/README.md)) · Phase 4 implemented ([security](docs/phase-04/README.md)) · Phase 5 implemented ([authentication](docs/phase-05/README.md)) · Phase 6 implemented ([users, roles, permissions](docs/phase-06/README.md)) · Phase 7 implemented ([showrooms](docs/phase-07/README.md)) · Phase 8 implemented ([vehicle master](docs/phase-08/README.md)) · Phase 9 implemented ([inventory & stock](docs/phase-09/README.md)).
 
 ## Database (Supabase)
 

@@ -48,6 +48,14 @@ Set<String> currentPermissions(Ref ref) {
   return state is SignedIn ? state.permissions : const <String>{};
 }
 
+/// The working showroom (or ALL SHOWROOMS); `null` until chosen. Showroom-
+/// scoped screens watch this so switching showroom reloads their data.
+@riverpod
+ShowroomSelection? currentSelection(Ref ref) {
+  final SessionState? state = ref.watch(sessionControllerProvider).value;
+  return state is SignedIn ? state.selection : null;
+}
+
 /// Loads the session after sign-in / app start, keeps the showroom choice and
 /// clears everything on sign-out.
 @Riverpod(keepAlive: true)
@@ -96,6 +104,27 @@ class SessionController extends _$SessionController {
     await ref
         .read(preferenceStoreProvider)
         .writeString(StorageKeys.lastShowroomFor(session.profileId), selection.storageValue);
+  }
+
+  /// Reloads showrooms and permissions after an administrative change (a new
+  /// or deactivated showroom). Keeps the current showroom while it is still
+  /// available, otherwise falls back to the start-up rule.
+  Future<void> refresh() async {
+    final SessionState? current = state.value;
+    if (current is! SignedIn) {
+      return;
+    }
+    final UserSession? session = await ref.read(authRepositoryProvider).fetchSession();
+    final ShowroomSelection? selection = current.selection;
+    if (session == null || session.blockReason != null) {
+      state = AsyncData<SessionState>(SignedIn(session: session));
+      return;
+    }
+    final bool stillValid = selection != null &&
+        (selection.isAll ? session.canViewAllShowrooms : session.showroomById(selection.showroomId!) != null);
+    state = AsyncData<SessionState>(
+      SignedIn(session: session, selection: stillValid ? selection : session.initialSelection(null)),
+    );
   }
 
   /// Fetches profile, showrooms and permissions and restores the showroom.
